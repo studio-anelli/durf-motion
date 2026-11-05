@@ -1,0 +1,39 @@
+name: Build WordPress plugin release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate PHP syntax
+        run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+
+      - name: Validate JavaScript syntax
+        run: find assets -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Check plugin version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          grep -qE "Version:[[:space:]]*${TAG}([[:space:]]|$)" durf-motion.php
+          grep -q "const VERSION = '${TAG}'" durf-motion.php
+
+      - name: Package installable ZIP
+        run: |
+          mkdir -p dist/durf-motion
+          cp durf-motion.php README.md dist/durf-motion/
+          cp -r assets includes dist/durf-motion/
+          (cd dist && zip -qr ../durf-motion.zip durf-motion)
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" durf-motion.zip --generate-notes
