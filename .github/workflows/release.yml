@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 1.9.0), matching durf-motion.php'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -12,7 +18,26 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Verify version and release branch
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            [[ "${GITHUB_REF}" == "refs/heads/main" ]] || { echo "Run manual releases from main."; exit 1; }
+            VERSION="${INPUT_VERSION}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid version"; exit 1; }
+          grep -qE "^ \* Version:[[:space:]]*${VERSION}([[:space:]]|$)" durf-motion.php
+          grep -qF "const VERSION = '${VERSION}';" durf-motion.php
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+          echo "TAG=v${VERSION}" >> "${GITHUB_ENV}"
 
       - name: Validate PHP syntax
         run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
@@ -20,20 +45,19 @@ jobs:
       - name: Validate JavaScript syntax
         run: find assets -name '*.js' -print0 | xargs -0 -n1 node --check
 
-      - name: Check plugin version
+      - name: Package WordPress ZIP
+        shell: bash
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          grep -qE "Version:[[:space:]]*${TAG}([[:space:]]|$)" durf-motion.php
-          grep -q "const VERSION = '${TAG}'" durf-motion.php
-
-      - name: Package installable ZIP
-        run: |
+          set -euo pipefail
           mkdir -p dist/durf-motion
           cp durf-motion.php README.md dist/durf-motion/
           cp -r assets includes dist/durf-motion/
           (cd dist && zip -qr ../durf-motion.zip durf-motion)
+          unzip -l durf-motion.zip | grep -q 'durf-motion/durf-motion.php'
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" durf-motion.zip --generate-notes
+        shell: bash
+        run: |
+          gh release create "${TAG}" durf-motion.zip --target "${GITHUB_SHA}" --title "DURF Motion ${TAG}" --generate-notes
