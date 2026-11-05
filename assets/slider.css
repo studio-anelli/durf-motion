@@ -1,0 +1,33 @@
+/* DURF Motion — editorial sliders v0.8. No visible chrome, no section translation. */
+.dm-slider{--dm-slider-gap:18px;--dm-slider-ratio:16/9;--dm-slider-fit:cover;--dm-slider-position:50% 50%;--dm-slider-peek:16%;--dm-slider-viewport-height:76svh;--dm-slider-vertical-slide-height:64svh;position:relative;width:100%;max-width:100%;min-width:0;isolation:isolate}
+.dm-slider,.dm-slider *{box-sizing:border-box}
+.dm-slider .splide__track{position:relative;width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior:contain;scroll-snap-type:x mandatory;scroll-behavior:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab;touch-action:pan-x pan-y}
+.dm-slider .splide__track::-webkit-scrollbar{display:none}
+.dm-slider .splide__track.dm-slider-dragging{cursor:grabbing;scroll-snap-type:none;user-select:none}
+.dm-slider .splide__list{display:flex;align-items:stretch;flex-direction:row;gap:var(--dm-slider-gap);width:100%;min-width:100%;list-style:none!important;margin:0!important;padding:0!important}
+.dm-slider .splide__slide{list-style:none!important;margin:0!important;padding:0!important;min-width:0;flex:0 0 calc((100% - var(--dm-slider-gap)) * (100 - var(--dm-slider-peek))/100);scroll-snap-align:start;scroll-snap-stop:normal}
+.dm-slider--gallery.dm-slider--horizontal .splide__slide{flex-basis:calc((100% - 2 * var(--dm-slider-gap))/3)}
+.dm-slider .dm-slide-frame{position:relative;overflow:hidden;margin:0;width:100%;background:transparent}
+.dm-slider .dm-slide-frame img{display:block;width:100%;height:auto;aspect-ratio:var(--dm-slider-ratio);object-fit:var(--dm-slider-fit);object-position:var(--dm-slider-position);transition:filter .65s cubic-bezier(.22,1,.36,1)}
+.dm-slider--drift .dm-slide-frame img{transform:scale(1.05);will-change:transform}
+.dm-slider .dm-slide-frame figcaption{font:inherit;font-size:clamp(12px,1vw,15px);line-height:1.4;margin:9px 0 0;opacity:.7}
+/* Vertical mode: narrow editorial picture column, not a horizontal gallery rotated. */
+.dm-slider--vertical .splide__track{height:var(--dm-slider-viewport-height);overflow-x:hidden;overflow-y:auto;scroll-snap-type:y mandatory;cursor:grab;overscroll-behavior-y:contain;touch-action:pan-y}
+.dm-slider--vertical .splide__list{display:flex;flex-direction:column;align-items:stretch;width:100%;min-width:0;min-height:100%;gap:var(--dm-slider-gap)}
+.dm-slider--vertical .splide__slide,.dm-slider--vertical.dm-slider--gallery .splide__slide{width:100%;flex:0 0 var(--dm-slider-vertical-slide-height);min-height:0}
+.dm-slider--vertical .dm-slide-frame{height:100%}
+.dm-slider--vertical .dm-slide-frame img{width:100%;height:100%;aspect-ratio:auto;object-fit:var(--dm-slider-fit);object-position:var(--dm-slider-position)}
+.dm-slider--vertical .dm-slide-frame figcaption{position:absolute;bottom:12px;left:14px;right:14px;color:#fff;text-shadow:0 1px 4px #0009}
+.dm-slider .splide__track:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+@media(max-width:980px){.dm-slider--gallery.dm-slider--horizontal .splide__slide{flex-basis:calc((100% - var(--dm-slider-gap))/2)}}
+@media(max-width:767px){.dm-slider--horizontal .splide__slide,.dm-slider--gallery.dm-slider--horizontal .splide__slide{flex-basis:88%}.dm-slider--vertical .splide__track{height:min(75svh,var(--dm-slider-viewport-height))}.dm-slider--vertical .splide__slide{flex-basis:min(61svh,var(--dm-slider-vertical-slide-height))}}
+@media(prefers-reduced-motion:reduce){.dm-slider .dm-slide-frame img{transition:none!important;transform:none!important}}
+
+/* Scroll-driven sliders are continuous filmstrips: disable mandatory snapping while the page drives them. */
+.dm-slider--scroll-driven .splide__track,.dm-slider--scroll-driven.dm-slider--vertical .splide__track{scroll-snap-type:none}
+
+/* Continuous loops deliberately avoid snap points and hide wrap jumps. */
+.dm-slider--loop .splide__track,.dm-slider--autoplay .splide__track{scroll-snap-type:none!important}
+.dm-slider--no-drag .splide__track{cursor:default;touch-action:pan-y}
+.dm-slider--no-drag.dm-slider--vertical .splide__track{touch-action:pan-x}
+.dm-slider--loop .splide__slide[aria-hidden="true"]{pointer-events:none}

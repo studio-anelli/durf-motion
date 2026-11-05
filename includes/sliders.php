@@ -1,0 +1,132 @@
+<?php
+/** DURF Motion v0.8: independently editable photo sliders. */
+if (!defined('ABSPATH')) exit;
+
+final class DURF_Motion_Sliders {
+    const TYPE = 'durf_slider';
+    const META = '_dm_slider';
+
+    public static function init() {
+        add_action('init', array(__CLASS__, 'register_type'));
+        add_action('add_meta_boxes', array(__CLASS__, 'meta_boxes'));
+        add_action('save_post_' . self::TYPE, array(__CLASS__, 'save'), 10, 2);
+        add_action('admin_enqueue_scripts', array(__CLASS__, 'admin_assets'));
+        add_action('wp_enqueue_scripts', array(__CLASS__, 'frontend_assets'));
+        add_shortcode('durf_slider', array(__CLASS__, 'shortcode'));
+        add_filter('manage_' . self::TYPE . '_posts_columns', array(__CLASS__, 'columns'));
+        add_action('manage_' . self::TYPE . '_posts_custom_column', array(__CLASS__, 'column_content'), 10, 2);
+    }
+    public static function register_type() {
+        register_post_type(self::TYPE, array(
+            'label' => 'DURF Sliders', 'labels'=>array('name'=>'DURF Sliders', 'singular_name'=>'DURF Slider','add_new_item'=>'Add new DURF slider','edit_item'=>'Edit DURF slider'),
+            'public'=>false, 'show_ui'=>true, 'show_in_menu'=>'durf-motion',
+            'menu_icon'=>'dashicons-images-alt2', 'supports'=>array('title'),
+            'capability_type'=>'post', 'map_meta_cap'=>true,
+            'show_in_rest'=>false, 'exclude_from_search'=>true,
+        ));
+    }
+    public static function defaults() {
+        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1);
+    }
+    public static function settings($id) {
+        $value=get_post_meta($id,self::META,true);
+        $raw=is_array($value)?$value:array();
+        return wp_parse_args($raw,self::defaults());
+    }
+    public static function meta_boxes() {
+        add_meta_box('dm_slider_editor','Images & slider settings',array(__CLASS__,'editor'),self::TYPE,'normal','high');
+    }
+    public static function admin_assets($hook) {
+        $screen=function_exists('get_current_screen')?get_current_screen():null;
+        if (!$screen || $screen->post_type!==self::TYPE || !in_array($hook,array('post.php','post-new.php'),true)) return;
+        wp_enqueue_media();
+        wp_enqueue_script('dm-slider-admin',plugins_url('../assets/slider-admin.js', __FILE__),array('jquery'),DURF_Motion::VERSION,true);
+        // plugin_dir_url(__FILE__) would resolve to includes/, so use its parent.
+        wp_add_inline_style('wp-admin', '.dm-slider-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px;margin:15px 0}.dm-slider-image{padding:8px;border:1px solid #ddd;background:#fff}.dm-slider-image img{width:100%;height:100px;object-fit:cover}.dm-slider-image-actions{display:flex;gap:5px;justify-content:center}.dm-slider-controls{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:15px}.dm-slider-controls label{display:grid;gap:6px}.dm-slider-controls input,.dm-slider-controls select{max-width:100%}@media(max-width:800px){.dm-slider-controls{grid-template-columns:repeat(2,minmax(120px,1fr))}}');
+    }
+    public static function editor($post) {
+        $s=self::settings($post->ID);
+        wp_nonce_field('dm_slider_save','dm_slider_nonce');
+        echo '<p><strong>WPBakery shortcode:</strong> <code>[durf_slider id="' . (int)$post->ID . '"]</code> <small>(Save the slider to activate it.)</small></p>';
+        echo '<p><button type="button" id="dm-slider-add" class="button button-primary">Choose / add photos</button> <span>Use arrows below each thumbnail to reorder images.</span></p>';
+        echo '<div id="dm-slider-images" class="dm-slider-images" aria-live="polite"></div>';
+        echo '<input type="hidden" id="dm-slider-ids" name="dm_slider[ids]" value="' . esc_attr(implode(',',array_map('absint',$s['ids']))) . '">';
+        echo '<h3>Appearance</h3><div class="dm-slider-controls">';
+        self::select('layout','Composition',array('editorial'=>'Editorial: one dominant image','gallery'=>'Gallery: multiple images'),$s);
+        self::select('direction','Direction',array('horizontal'=>'Horizontal: image ribbon','vertical'=>'Vertical: filmstrip'),$s);
+        self::select('scroll_response','Respond to page scrolling',array('off'=>'Off: drag / swipe only','gentle'=>'Gentle: follow scroll','dynamic'=>'Dynamic: accelerate with scroll'),$s);
+        self::select('ratio','Image ratio',array('16/9'=>'16:9','4/3'=>'4:3','1/1'=>'Square','3/2'=>'3:2','auto'=>'Original (natural)'),$s);
+        self::select('fit','Image fit',array('cover'=>'Cover','contain'=>'Contain'),$s);
+        self::select('position','Focal point',array('50% 50%'=>'Center','50% 25%'=>'Top','50% 75%'=>'Bottom','25% 50%'=>'Left','75% 50%'=>'Right'),$s);
+        self::integer('gap','Gap (px)',0,60,$s);
+        self::integer('peek','Editorial next image visible (%)',5,35,$s);
+        self::integer('speed','Snap transition (ms)',200,1800,$s);
+        self::integer('scroll_strength','Scroll influence (0–150%)',0,150,$s);
+        self::integer('smoothness','Ease / inertia (0–95)',0,95,$s);
+        self::integer('viewport_height','Vertical frame height (vh)',35,100,$s);
+        self::integer('vertical_slide_height','Vertical photo height (vh)',25,100,$s);
+        echo '</div><h3>Playback & interaction</h3><div class="dm-slider-controls">';
+        self::checkbox('autoplay','Continuous autoplay',$s);
+        self::integer('autoplay_speed','Autoplay speed (px / second)',3,160,$s);
+        self::checkbox('loop','Seamless infinite loop',$s);
+        self::checkbox('allow_drag','Allow mouse dragging / touch swiping',$s);
+        self::checkbox('pause_hover','Pause autoplay while hovering',$s);
+        self::checkbox('image_drift','Subtle cinematic image movement',$s);
+        self::checkbox('captions','Show Media Library captions',$s);
+        echo '</div><p><strong>Editorial idea:</strong> use a vertical filmstrip for a photographic column beside text, or a wide horizontal ribbon. Page-scroll motion never blocks ordinary site scrolling. Autoplay and page-scroll influence work simultaneously: scrolling briefly accelerates or reverses the filmstrip, then autoplay resumes. Infinite loop seamlessly joins the last image to the first. Turn dragging off when you want motion to be entirely automatic. Reduced-motion visitors see a static, manually navigable gallery.</p>';
+    }
+    private static function select($key,$label,$options,$s) {
+        echo '<label><span>'.esc_html($label).'</span><select name="dm_slider['.esc_attr($key).']">';
+        foreach($options as $value=>$name)echo '<option value="'.esc_attr($value).'" '.selected($s[$key],$value,false).'>'.esc_html($name).'</option>';
+        echo '</select></label>';
+    }
+    private static function integer($key,$label,$min,$max,$s) {
+        echo '<label><span>'.esc_html($label).'</span><input type="number" name="dm_slider['.esc_attr($key).']" min="'.(int)$min.'" max="'.(int)$max.'" value="'.(int)$s[$key].'"></label>';
+    }
+    private static function checkbox($key,$label,$s) {
+        echo '<label><span>'.esc_html($label).'</span><span><input type="checkbox" name="dm_slider['.esc_attr($key).']" value="1" '.checked(!empty($s[$key]),true,false).'> Enable</span></label>';
+    }
+    public static function save($post_id,$post) {
+        if (!isset($_POST['dm_slider_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['dm_slider_nonce'])),'dm_slider_save'))return;
+        if ((defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) || wp_is_post_revision($post_id) || !current_user_can('edit_post',$post_id))return;
+        $input=isset($_POST['dm_slider']) && is_array($_POST['dm_slider'])?wp_unslash($_POST['dm_slider']):array();
+        $d=self::defaults();$ids=explode(',',is_scalar($input['ids']??null)?(string)$input['ids']:'');
+        $ids=array_values(array_unique(array_filter(array_map('absint',$ids),function($id){return $id>0 && wp_attachment_is_image($id);})));$ids=array_slice($ids,0,80);
+        $d['ids']=$ids;
+        foreach(array('layout'=>array('editorial','gallery'),'direction'=>array('horizontal','vertical'),'scroll_response'=>array('off','gentle','dynamic'),'ratio'=>array('16/9','4/3','1/1','3/2','auto'),'fit'=>array('cover','contain'),'position'=>array('50% 50%','50% 25%','50% 75%','25% 50%','75% 50%')) as $key=>$allowed){$v=$input[$key]??$d[$key];$d[$key]=in_array($v,$allowed,true)?$v:$d[$key];}
+        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
+        foreach(array('image_drift','captions','loop','autoplay','pause_hover','allow_drag') as $key)$d[$key]=!empty($input[$key])?1:0;
+        update_post_meta($post_id,self::META,$d);
+    }
+    public static function frontend_assets() {
+        wp_enqueue_style('dm-slider',plugins_url('../assets/slider.css',__FILE__),array(),DURF_Motion::VERSION);
+        wp_register_script('dm-slider',plugins_url('../assets/slider.js',__FILE__),array(),DURF_Motion::VERSION,true);
+    }
+    public static function shortcode($atts) {
+        $a=shortcode_atts(array('id'=>0),$atts,'durf_slider');$id=absint($a['id']);
+        if (!$id || get_post_type($id)!==self::TYPE || get_post_status($id)!=='publish')return '';
+        $s=self::settings($id);if(empty($s['ids']))return '';
+        wp_enqueue_style('dm-slider');wp_enqueue_script('dm-slider');
+        $html='';$found=0;
+        foreach($s['ids'] as $attachment_id){
+            $src=wp_get_attachment_image_src($attachment_id,'large');if(!$src)continue;
+            $alt=get_post_meta($attachment_id,'_wp_attachment_image_alt',true);
+            $caption=wp_get_attachment_caption($attachment_id);
+            $image=wp_get_attachment_image($attachment_id,'large',false,array('loading'=>'lazy','decoding'=>'async','alt'=>$alt,'sizes'=>'(max-width:767px) 94vw, (max-width:1100px) 75vw, 70vw'));
+            if(!$image)continue;
+            $html.='<li class="splide__slide"><figure class="dm-slide-frame">'.$image;
+            if(!empty($s['captions'])&&$caption)$html.='<figcaption>'.esc_html($caption).'</figcaption>';
+            $html.='</figure></li>';
+            $found++;
+        }
+        if(!$found)return '';
+        $params=array('layout'=>$s['layout'],'gap'=>(int)$s['gap'],'peek'=>(int)$s['peek'],'speed'=>(int)$s['speed'],'loop'=>!empty($s['loop']),'autoplay'=>!empty($s['autoplay']),'autoplaySpeed'=>(int)$s['autoplay_speed'],'pauseHover'=>!empty($s['pause_hover']),'allowDrag'=>!empty($s['allow_drag']),'direction'=>$s['direction'],'scrollResponse'=>$s['scroll_response'],'scrollStrength'=>(int)$s['scroll_strength'],'smoothness'=>(int)$s['smoothness'],'imageDrift'=>!empty($s['image_drift']));
+        $classes='dm-slider dm-slider--'.$s['layout'].' dm-slider--'.$s['direction'];
+        $styles='--dm-slider-gap:'.$s['gap'].'px;--dm-slider-ratio:'.($s['ratio']==='auto'?'auto':$s['ratio']).';--dm-slider-fit:'.$s['fit'].';--dm-slider-position:'.$s['position'].';--dm-slider-peek:'.$s['peek'].'%;--dm-slider-viewport-height:'.$s['viewport_height'].'svh;--dm-slider-vertical-slide-height:'.$s['vertical_slide_height'].'svh;';
+        return '<div class="'.esc_attr($classes).' splide" aria-label="'.esc_attr(get_the_title($id)).'" data-dm-slider="'.esc_attr(wp_json_encode($params)).'" style="'.esc_attr($styles).'">'
+          .'<div class="splide__track"><ul class="splide__list">'.$html.'</ul></div>'
+          .'</div>';
+    }
+    public static function columns($cols){$cols['dm_slider_shortcode']='Shortcode';return $cols;}
+    public static function column_content($column,$id){if($column==='dm_slider_shortcode')echo '<code>[durf_slider id="'.(int)$id.'"]</code>';}
+}
