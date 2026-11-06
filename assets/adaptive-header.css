@@ -1,13 +1,20 @@
 /* Opt-in adaptive header; all selectors remain scoped to the selected header. */
+/* Follow mode uses the already-blended section colour without adding an unrelated
+   CSS delay. Independent modes are editorial timing presets. */
+.dm-adaptive-header--ease-follow{--dm-header-duration:0ms;--dm-header-curve:linear}
+.dm-adaptive-header--ease-quick{--dm-header-duration:180ms;--dm-header-curve:cubic-bezier(.2,.7,.2,1)}
+.dm-adaptive-header--ease-soft{--dm-header-duration:480ms;--dm-header-curve:cubic-bezier(.22,1,.36,1)}
+.dm-adaptive-header--ease-cinematic{--dm-header-duration:800ms;--dm-header-curve:cubic-bezier(.19,1,.22,1)}
+
 .dm-adaptive-header{
   color:var(--dm-header-fg,inherit)!important;
-  transition:color .24s ease;
+  transition:color var(--dm-header-duration,0ms) var(--dm-header-curve,ease);
 }
 .dm-adaptive-header .l-subheader,
 .dm-adaptive-header .l-subheader.at_top,
 .dm-adaptive-header .l-subheader.at_middle,
 .dm-adaptive-header .l-subheader.at_bottom{
-  transition:background-color .24s ease,color .24s ease!important;
+  transition:background-color var(--dm-header-duration,0ms) var(--dm-header-curve,ease),color var(--dm-header-duration,0ms) var(--dm-header-curve,ease)!important;
 }
 .dm-adaptive-header--match .l-subheader,
 .dm-adaptive-header--match .l-subheader.at_top,
@@ -45,7 +52,7 @@
 }
 .dm-adaptive-header--mono-logo .w-logo img{
   filter:var(--dm-header-logo-filter,none);
-  transition:filter .24s ease;
+  transition:filter var(--dm-header-duration,0ms) var(--dm-header-curve,ease);
 }
 @media(prefers-reduced-motion:reduce){
   .dm-adaptive-header,
