@@ -23,6 +23,8 @@
     const nodes=Array.from(root.querySelectorAll('clipPath.dm-mask-clip circle'));
     const sources=Array.from(root.querySelectorAll('.dm-mask-source'));
     const imageRadius=clamp(Number(o.imageRadius)||0,0,200);
+    const colourAccent=Boolean(o.colorInterleave);
+    const photoStart=clamp(Number(o.colorHandoff)||0,0,60)/100;
     if(!stage||!svg||!base||!incoming||!incomingLayer||!baseFill||!incomingFill||!rounded||!nodes.length||sources.length<2)return;
     root.dataset.dmMaskReady='1';
 
@@ -43,35 +45,40 @@
     base.setAttribute('preserveAspectRatio',aspect);
     incoming.setAttribute('preserveAspectRatio',aspect);
 
-    // Keep images warm and allow solid palette frames between photographs.
+    // Every slide is a photograph. Solid colours are brief accents during transitions.
     const preload=[];
     sources.forEach(item=>{
-      if(item.dataset.type==='color')return;
-      const img=new Image();img.decoding='async';img.src=item.dataset.src||'';preload.push(img);
+      const img=new Image();
+      img.decoding='async';
+      img.src=item.dataset.src||'';
+      preload.push(img);
     });
     function entry(i){return sources[(i+count)%count]}
     function sectionBackground(){
       let item=root.closest('.vc_row')||root.parentElement;
       while(item&&item!==document.documentElement){
         const color=getComputedStyle(item).backgroundColor;
-        if(color && !/^transparent$|^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0(?:\.0+)?\s*\)$/i.test(color)&& color!=='rgba(0, 0, 0, 0)')return color;
+        if(color && color!=='transparent' && color!=='rgba(0, 0, 0, 0)')return color;
         item=item.parentElement;
       }
       return '#F8F4EC';
     }
+    function accentColor(){
+      return o.accentColor || sectionBackground();
+    }
     function setVisual(image,rect,i){
-      const item=entry(i),isColor=item.dataset.type==='color';
-      if(isColor){
-        rect.setAttribute('fill',item.dataset.color||sectionBackground());
-        image.setAttribute('opacity','0');
-        image.removeAttribute('href');
-      }else{
-        rect.setAttribute('fill','transparent');
-        image.setAttribute('href',item.dataset.src||'');
-        image.setAttribute('opacity','1');
-      }
+      const item=entry(i);
+      rect.setAttribute('fill','transparent');
+      image.setAttribute('href',item.dataset.src||'');
+      image.setAttribute('opacity','1');
     }
     const alt=i=>entry(i).dataset.alt||'';
+    const smoothstep=t=>{const x=clamp(t,0,1);return x*x*(3-2*x)};
+    function photoOpacity(t){
+      if(!colourAccent)return 1;
+      // The next photo starts before the coloured reveal is completed.
+      return smoothstep((t-photoStart)/Math.max(.12,.68-photoStart));
+    }
     function stickyCompanion(){
       if(!scrollMode||!o.stickyText)return;
       const row=root.closest('.vc_row');
@@ -126,6 +133,7 @@
       from=i;to=j;
       setVisual(base,baseFill,i);
       setVisual(incoming,incomingFill,j);
+      incomingFill.setAttribute('fill',colourAccent?accentColor():'transparent');
       root.setAttribute('aria-label',alt(i)||'Photographic slideshow');
       lastRadius=-1;
     }
@@ -135,6 +143,7 @@
     }
     function mask(t){
       const p=easingFn(clamp(t,0,1));
+      incoming.setAttribute('opacity',String(photoOpacity(p)));
       const radius=reduced?(p>=.5?fullRadius:0):Math.min(fullRadius,fullRadius*p);
       if(Math.abs(lastRadius-radius)>.03){
         nodes.forEach(node=>node.setAttribute('r',String(radius)));

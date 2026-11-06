@@ -26,7 +26,7 @@ final class DURF_Motion_Sliders {
         ));
     }
     public static function defaults() {
-        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1,'mask_grid'=>'6','mask_playback'=>'scroll','mask_duration'=>1100,'mask_interval'=>3500,'mask_scroll_distance'=>100,'mask_velocity'=>0,'mask_velocity_strength'=>35,'mask_height'=>75,'mask_easing'=>'editorial','mask_smoothing'=>45,'mask_spacing'=>85,'container_radius'=>0,'image_radius'=>0,'mask_sticky_text'=>0,'mask_sticky_offset'=>110,'mask_interleave'=>'off','mask_color'=>'section');
+        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1,'mask_grid'=>'6','mask_playback'=>'scroll','mask_duration'=>1100,'mask_interval'=>3500,'mask_scroll_distance'=>100,'mask_velocity'=>0,'mask_velocity_strength'=>35,'mask_height'=>75,'mask_easing'=>'editorial','mask_smoothing'=>45,'mask_spacing'=>85,'container_radius'=>0,'image_radius'=>0,'mask_sticky_text'=>0,'mask_sticky_offset'=>110,'mask_interleave'=>'off','mask_color'=>'section','mask_color_handoff'=>20);
     }
     public static function settings($id) {
         $value=get_post_meta($id,self::META,true);
@@ -91,6 +91,7 @@ final class DURF_Motion_Sliders {
         self::integer('mask_sticky_offset','Sticky text top offset (px)',0,300,$s);
         self::select('mask_interleave','Interleave solid colour',array('off'=>'Off: photos only','between'=>'Between every photo'),$s);
         self::select('mask_color','Solid colour',array('section'=>'Match section background','cream'=>'DURF Cream','orange'=>'DURF Orange','green'=>'DURF Green','pink'=>'DURF Pink','ink'=>'DURF Ink'),$s);
+        self::integer('mask_color_handoff','Next photo begins at (% of reveal)',0,60,$s);
         self::checkbox('mask_velocity','React to scroll speed',$s);
         self::integer('mask_velocity_strength','Scroll velocity influence (%)',0,100,$s);
         self::select('fit','Image fit',array('cover'=>'Cover','contain'=>'Contain'),$s);
@@ -117,7 +118,7 @@ final class DURF_Motion_Sliders {
         $ids=array_values(array_unique(array_filter(array_map('absint',$ids),function($id){return $id>0 && wp_attachment_is_image($id);})));$ids=array_slice($ids,0,80);
         $d['ids']=$ids;
         foreach(array('layout'=>array('editorial','gallery','dot-mask'),'direction'=>array('horizontal','vertical'),'scroll_response'=>array('off','gentle','dynamic'),'ratio'=>array('16/9','4/3','1/1','3/2','auto'),'fit'=>array('cover','contain'),'position'=>array('50% 50%','50% 25%','50% 75%','25% 50%','75% 50%')) as $key=>$allowed){$v=$input[$key]??$d[$key];$d[$key]=in_array($v,$allowed,true)?$v:$d[$key];}
-        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160),'mask_duration'=>array(250,6000),'mask_interval'=>array(1000,15000),'mask_scroll_distance'=>array(40,250),'mask_velocity_strength'=>array(0,100),'mask_height'=>array(35,100),'mask_smoothing'=>array(0,95),'mask_spacing'=>array(30,100),'container_radius'=>array(0,200),'image_radius'=>array(0,200),'mask_sticky_offset'=>array(0,300)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
+        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160),'mask_duration'=>array(250,6000),'mask_interval'=>array(1000,15000),'mask_scroll_distance'=>array(40,250),'mask_velocity_strength'=>array(0,100),'mask_height'=>array(35,100),'mask_smoothing'=>array(0,95),'mask_spacing'=>array(30,100),'container_radius'=>array(0,200),'image_radius'=>array(0,200),'mask_sticky_offset'=>array(0,300),'mask_color_handoff'=>array(0,60)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
         foreach(array('image_drift','captions','loop','autoplay','pause_hover','allow_drag','mask_velocity','mask_sticky_text') as $key)$d[$key]=!empty($input[$key])?1:0;
         $d['mask_grid']=in_array((string)($input['mask_grid']??$d['mask_grid']),array('1','4','6','8','12'),true)?(string)$input['mask_grid']:'6';
         $d['mask_playback']=in_array(($input['mask_playback']??''),array('scroll','auto'),true)?$input['mask_playback']:'scroll';
@@ -171,14 +172,8 @@ final class DURF_Motion_Sliders {
         $palette=DURF_Motion::settings();
         $color_key='color_'.$s['mask_color'];
         $color=$s['mask_color']==='section'?'':(isset($palette[$color_key])?sanitize_hex_color($palette[$color_key]):'#F8F4EC');
-        if($s['mask_interleave']==='between'){
-            $interleaved=array();
-            foreach($sources as $index=>$source){
-                $interleaved[]=$source;
-                if($index<count($sources)-1 || $s['mask_playback']==='auto')$interleaved[]=array('type'=>'color','color'=>$color,'alt'=>'Colour transition');
-            }
-            $sources=$interleaved;
-        }
+        // Colour is now a transient accent within each photo-to-photo transition.
+        // Do not insert a full-duration colour source into the slideshow timeline.
         wp_enqueue_style('dm-dot-mask');wp_enqueue_script('dm-dot-mask');
         $grid=(int)$s['mask_grid'];$dimensions=array(1=>array(1,1),4=>array(2,2),6=>array(3,2),8=>array(4,2),12=>array(4,3));
         if(!isset($dimensions[$grid]))$grid=6;
@@ -196,7 +191,9 @@ final class DURF_Motion_Sliders {
           'pauseHover'=>!empty($s['pause_hover']),'columns'=>$cols,'rows'=>$rows,
           'easing'=>$s['mask_easing'],'smoothing'=>(int)$s['mask_smoothing'],'spacing'=>(int)$s['mask_spacing'],
           'stickyText'=>!empty($s['mask_sticky_text']),'stickyOffset'=>(int)$s['mask_sticky_offset'],
-          'imageRadius'=>(int)$s['image_radius'],'matchSection'=>$s['mask_color']==='section'
+          'imageRadius'=>(int)$s['image_radius'],'matchSection'=>$s['mask_color']==='section',
+          'colorInterleave'=>$s['mask_interleave']==='between','accentColor'=>$color,
+          'colorHandoff'=>(int)$s['mask_color_handoff']
         );
         $source_html='';
         foreach($sources as $source){
