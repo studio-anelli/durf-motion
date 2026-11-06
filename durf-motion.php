@@ -2,7 +2,7 @@
 /**
  * Plugin Name: DURF Motion
  * Description: Lightweight, accessible scroll-triggered motion effects for WPBakery / Impreza and regular WordPress content.
- * Version: 1.10.2
+ * Version: 1.10.3
  * Author: Anelli Studio
  * License: GPL-2.0-or-later
  * Text Domain: durf-motion
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) { exit; }
 
 final class DURF_Motion {
     const OPTION = 'durf_motion_settings';
-    const VERSION = '1.10.2';
+    const VERSION = '1.10.3';
 
     public static function defaults() {
         return array('duration'=>900, 'distance'=>36, 'stagger'=>120, 'parallax'=>60, 'image_parallax'=>35, 'background_parallax'=>45, 'background_overscan'=>8, 'section_parallax'=>20, 'dots_enabled'=>1, 'dots_strength'=>100, 'dots_start'=>85, 'dots_end'=>15, 'dots_easing'=>'soft', 'parallax_easing'=>'soft', 'image_easing'=>'soft', 'background_easing'=>'soft', 'section_easing'=>'soft', 'scroll_enabled'=>0, 'scroll_smoothing'=>10, 'scroll_wheel'=>85, 'scroll_focus'=>'off', 'image_trigger'=>45, 'text_trigger'=>95, 'once'=>1, 'enabled'=>1, 'color_enabled'=>1, 'color_position'=>55, 'color_softness'=>'balanced', 'color_start'=>80, 'color_end'=>20, 'color_easing'=> 'smooth', 'color_cream'=>'#F8F4EC', 'color_orange'=>'#F16A37', 'color_green'=>'#507568', 'color_pink'=>'#DD8EB9', 'color_ink'=>'#25231F');
