@@ -31,3 +31,8 @@
 .dm-slider--no-drag .splide__track{cursor:default;touch-action:pan-y}
 .dm-slider--no-drag.dm-slider--vertical .splide__track{touch-action:pan-x}
 .dm-slider--loop .splide__slide[aria-hidden="true"]{pointer-events:none}
+
+/* Independent corner radii for standard editorial/gallery sliders. */
+.dm-slider{border-radius:var(--dm-slider-container-radius,0px)}
+.dm-slider .splide__track{border-radius:var(--dm-slider-container-radius,0px)}
+.dm-slider .dm-slide-frame{border-radius:var(--dm-slider-image-radius,0px)}
