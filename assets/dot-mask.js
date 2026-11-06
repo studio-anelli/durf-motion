@@ -13,7 +13,7 @@
     const stage=root.querySelector('.dm-mask-stage');
     const base=root.querySelector('.dm-mask-base');
     const incoming=root.querySelector('.dm-mask-incoming');
-    const circles=Array.from(root.querySelectorAll('.dm-mask-clip circle'));
+    const circles=Array.from(root.querySelectorAll('clipPath.dm-mask-clip circle'));
     if(sources.length<2||!stage||!base||!incoming||!circles.length)return;
     root.dataset.dmMaskReady='1';
     const scrollMode=opts.playback==='scroll';

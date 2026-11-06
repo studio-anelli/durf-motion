@@ -116,7 +116,8 @@ final class DURF_Motion_Sliders {
     public static function frontend_assets() {
         wp_enqueue_style('dm-slider',plugins_url('../assets/slider.css',__FILE__),array(),DURF_Motion::VERSION);
         wp_register_script('dm-slider',plugins_url('../assets/slider.js',__FILE__),array(),DURF_Motion::VERSION,true);
-        wp_register_style('dm-dot-mask',plugins_url('../assets/dot-mask.css',__FILE__),array(),DURF_Motion::VERSION);
+        // Enqueue in wp_head: shortcodes may render after wp_head, too late for a stylesheet.
+        wp_enqueue_style('dm-dot-mask',plugins_url('../assets/dot-mask.css',__FILE__),array(),DURF_Motion::VERSION);
         wp_register_script('dm-dot-mask',plugins_url('../assets/dot-mask.js',__FILE__),array(),DURF_Motion::VERSION,true);
     }
     public static function shortcode($atts) {
@@ -177,7 +178,7 @@ final class DURF_Motion_Sliders {
         $style='--dm-mask-height:'.(int)$s['mask_height'].'svh;--dm-mask-scroll-height:'.$scroll_height.'svh';
         return '<div class="'.esc_attr($classes).'" data-dm-mask="'.esc_attr(wp_json_encode($opts)).'" style="'.esc_attr($style).'">'
           .$source_html.'<div class="dm-mask-stage"><svg class="dm-mask-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-label="'.esc_attr(get_the_title($id)).'" role="img">'
-          .'<defs><clipPath id="'.esc_attr($uid).'" clipPathUnits="userSpaceOnUse">'.$clips.'</clipPath></defs>'
+          .'<defs><clipPath class="dm-mask-clip" id="'.esc_attr($uid).'" clipPathUnits="userSpaceOnUse">'.$clips.'</clipPath></defs>'
           .'<image class="dm-mask-base" href="'.esc_url($sources[0]['src']).'" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid slice"/>'
           .'<image class="dm-mask-incoming" href="'.esc_url($sources[1]['src']).'" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid slice" clip-path="url(#'.esc_attr($uid).')"/>'
           .'</svg></div></div>';
