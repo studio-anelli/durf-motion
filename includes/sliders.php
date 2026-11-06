@@ -175,7 +175,7 @@ final class DURF_Motion_Sliders {
             $interleaved=array();
             foreach($sources as $index=>$source){
                 $interleaved[]=$source;
-                if($index<count($sources)-1)$interleaved[]=array('type'=>'color','color'=>$color,'alt'=>'Colour transition');
+                if($index<count($sources)-1 || $s['mask_playback']==='auto')$interleaved[]=array('type'=>'color','color'=>$color,'alt'=>'Colour transition');
             }
             $sources=$interleaved;
         }
@@ -205,7 +205,7 @@ final class DURF_Motion_Sliders {
         }
         $classes='dm-mask-slider '.($s['mask_playback']==='scroll'?'dm-mask--scroll':'dm-mask--auto');
         $scroll_height=100+(count($sources)-1)*(int)$s['mask_scroll_distance'];
-        $style='--dm-mask-height:'.(int)$s['mask_height'].'svh;--dm-mask-scroll-height:'.$scroll_height.'svh;--dm-mask-container-radius:'.(int)$s['container_radius'].'px';
+        $style='--dm-mask-height:'.(int)$s['mask_height'].'svh;--dm-mask-scroll-height:'.$scroll_height.'svh;--dm-mask-container-radius:'.(int)$s['container_radius'].'px;--dm-mask-background:'.((int)$s['image_radius']>0?'transparent':'#25231f').';';
         $first=$sources[0];
         return '<div class="'.esc_attr($classes).'" data-dm-mask="'.esc_attr(wp_json_encode($opts)).'" style="'.esc_attr($style).'">'
           .$source_html.'<div class="dm-mask-stage"><svg class="dm-mask-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-label="'.esc_attr(get_the_title($id)).'" role="img">'
