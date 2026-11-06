@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.11.1
+- Move Adaptive Header settings out of Colours into a dedicated Header tab.
+- Add selectable header easing: Follow section background (default), Quick, Soft, Cinematic. Follow reads live colour-flow blends with no extra background delay and a short foreground contrast transition.
+- Add Dot Mask automatic playback scroll influence (0–100%, default 0): page scroll temporarily accelerates, slows or reverses automatic playback then returns naturally to normal speed.
+- Remove experimental sticky companion column scripts, CSS and settings. Use WPBakery's native column sticky control instead; existing slider settings remain compatible.
+- All new behaviour opt-in or preserves existing defaults. PHP/JS linted by GitHub Actions.
+
 ## 1.11.0
 - Add optional Adaptive Header settings to Colours: transparent header with automatic Ink/Cream text/icons, or section-matching header background and automatic contrast.
 - Detect the actual section below the header and follow live blended DURF colour-flow backgrounds, including coloured and custom HEX sections.
