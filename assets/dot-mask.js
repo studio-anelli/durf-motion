@@ -63,35 +63,58 @@
       return '#F8F4EC';
     }
     function colour(){return o.accentColor||getSectionColour()}
-    // Transform-managed sticky companion: WPBakery column wrappers vary across themes,
-    // and CSS position:sticky often has no usable containing height.
+    // Find the actual story column. Impreza may nest multiple vc_row/inner-row
+    // wrappers, so the closest vc_row is not necessarily the shared parent.
     function findStickyCompanion(){
       if(!scrollMode||!o.stickyText)return null;
-      const row=root.closest('.vc_row');
-      if(!row)return null;
-      const cols=Array.from(row.querySelectorAll(':scope > .wpb_column, :scope > .vc_column_container'));
-      const own=cols.find(col=>col.contains(root));
-      const other=cols.find(col=>col!==own&&col.querySelector('.vc_column-inner .wpb_wrapper'));
-      if(!own||!other)return null;
-      const content=other.querySelector('.vc_column-inner > .wpb_wrapper')||other.querySelector('.wpb_wrapper');
-      if(!content)return null;
-      row.classList.add('dm-mask-story-row');
-      other.classList.add('dm-mask-sticky-companion');
-      return {element:content,shift:0,top:clamp(Number(o.stickyOffset)||0,0,300)};
+      const candidates=[];
+      let row=root.closest('.vc_row');
+      while(row){
+        const columns=Array.from(row.children).filter(el=>el.matches('.wpb_column,.vc_column_container'));
+        const own=columns.find(col=>col.contains(root));
+        if(own&&columns.length>1){
+          const sibling=columns.find(col=>col!==own&&col.querySelector('.wpb_wrapper'));
+          if(sibling)candidates.push({row,sibling});
+        }
+        row=row.parentElement?row.parentElement.closest('.vc_row'):null;
+      }
+      // A deliberately named WPBakery text column is preferable, but ordinary
+      // two-column rows still work without any manual classes.
+      const explicit=document.querySelector('.dm-mask-text-column');
+      let match=null;
+      if(explicit){
+        match=candidates.find(c=>c.sibling===explicit||c.sibling.contains(explicit));
+      }
+      if(!match)match=candidates[0];
+      if(!match)return null;
+      const container=match.sibling;
+      const node=container.querySelector('.vc_column-inner > .wpb_wrapper')||
+        container.querySelector('.wpb_wrapper');
+      if(!node)return null;
+      match.row.classList.add('dm-mask-story-row');
+      container.classList.add('dm-mask-sticky-companion');
+      return {node,container,row:match.row,shift:0,
+        top:clamp(Number(o.stickyOffset)||0,0,300)};
     }
     const companion=findStickyCompanion();
     function updateSticky(){
       if(!companion)return;
-      const node=companion.element;
-      if(window.innerWidth<768){if(companion.shift){node.style.transform='';companion.shift=0}return}
+      const {node}=companion;
+      if(window.innerWidth<768){
+        if(companion.shift){node.style.translate='';companion.shift=0}
+        return;
+      }
+      // CSS individual translate does not override existing theme transforms.
       const rect=node.getBoundingClientRect();
       const naturalTop=rect.top-companion.shift;
-      const end=root.getBoundingClientRect().bottom;
-      const limit=Math.max(0,end-naturalTop-rect.height-16);
-      const shift=clamp(companion.top-naturalTop,0,limit);
-      if(Math.abs(shift-companion.shift)>.2){
+      const rowEnd=companion.row.getBoundingClientRect().bottom;
+      const sliderEnd=root.getBoundingClientRect().bottom;
+      const end=Math.min(rowEnd,sliderEnd);
+      const maxShift=Math.max(0,end-naturalTop-rect.height-12);
+      const shift=clamp(companion.top-naturalTop,0,maxShift);
+      if(Math.abs(shift-companion.shift)>.25){
         companion.shift=shift;
-        node.style.transform=shift?'translate3d(0,'+shift+'px,0)':'';
+        node.style.translate=shift?'0 '+shift.toFixed(2)+'px':'';
       }
     }
 
@@ -99,9 +122,7 @@
     let pairFrom=-1,pairTo=-1,lastPhotoRadius=-1,lastColourRadius=-1;
     let target=0,current=0,velocity=0,prevScroll=window.scrollY,prevScrollTime=performance.now();
     let autoTime=0,paused=false,lastFrame=performance.now(),raf=0;
-    // Once the colour reveal is underway and scrolling stops, finish the
-    // two-mask crossover without advancing the physical page position.
-    let lastScrollInput=performance.now(),completion=null,heldStep=-1,heldAt=0;
+
     function setRadii(nodes,r,key){
       if(key==='photo'&&Math.abs(lastPhotoRadius-r)<.02)return;
       if(key==='colour'&&Math.abs(lastColourRadius-r)<.02)return;
@@ -147,21 +168,23 @@
       const progress=clamp(t,0,1);
       let photoProgress,colourProgress;
       if(withColour){
-        // Two independent circular fields. In grow mode colour leads and the
-        // next image follows. In shrink mode the outgoing photo contracts first,
-        // revealing colour, then colour contracts to reveal the next photo.
+        // Organic crossover: both masks move on every scroll frame using the
+        // SAME eased progress. "Lag" changes their relative growth curve,
+        // never adds a pause, timer, fade or independent completion speed.
+        const lead=ease(progress);
+        const follow=Math.pow(lead,1+delay*2.2);
         if(reverse){
-          photoProgress=clamp(progress/Math.max(.01,1-delay),0,1);
-          colourProgress=clamp((progress-delay)/Math.max(.01,1-delay),0,1);
+          photoProgress=lead;
+          colourProgress=follow;
         }else{
-          colourProgress=clamp(progress/Math.max(.01,1-delay*.30),0,1);
-          photoProgress=clamp((progress-delay)/Math.max(.01,1-delay),0,1);
+          colourProgress=lead;
+          photoProgress=follow;
         }
       }else{
         photoProgress=progress;colourProgress=0;
       }
-      const photoSize=reduced?(photoProgress>=.5?1:0):ease(photoProgress);
-      const colourSize=reduced?(colourProgress>=.5?1:0):ease(colourProgress);
+      const photoSize=reduced?(photoProgress>=.5?1:0):(withColour?photoProgress:ease(photoProgress));
+      const colourSize=reduced?(colourProgress>=.5?1:0):colourProgress;
       setRadii(photoDots,fullRadius*(reverse?1-photoSize:photoSize),'photo');
       if(withColour)setRadii(colourDots,fullRadius*(reverse?1-colourSize:colourSize),'colour');
     }
@@ -192,7 +215,6 @@
       velocity=clamp((window.scrollY-prevScroll)/Math.max(16,now-prevScrollTime),-3,3);
       prevScroll=window.scrollY;prevScrollTime=now;
       target=scrollPosition();
-      lastScrollInput=now;
     }
     function frame(now){
       const dt=Math.min(64,Math.max(0,now-lastFrame));lastFrame=now;
@@ -210,35 +232,8 @@
             display=index+clamp(fraction+boost,.001,.999);
           }
         }
-        if(withColour&&!reduced){
-          // Keep a finished photo stable until scrolling catches up, but allow
-          // a clear upward gesture to reverse the transition.
-          if(heldStep>=0){
-            if(target<heldAt-.08)heldStep=-1;
-            else if(target>=heldStep-.001)heldStep=-1;
-            else display=Math.max(display,heldStep);
-          }
-          if(completion){
-            if(target<completion.targetAtStart-.08){completion=null}
-            else{
-              const t=clamp((now-completion.started)/420,0,1);
-              const done=t*t*(3-2*t);
-              display=Math.max(display,completion.from+(completion.index+1-completion.from)*done);
-              if(t>=1){
-                heldStep=completion.index+1;
-                heldAt=completion.targetAtStart;
-                completion=null;
-              }
-            }
-          }
-          if(!completion&&heldStep<0&&now-lastScrollInput>180){
-            const index=Math.floor(display);
-            const fraction=display-index;
-            if(index<count-1&&fraction>.2&&fraction<.98){
-              completion={index,from:display,started:now,targetAtStart:target};
-            }
-          }
-        }
+        // Scroll progress is the sole source of truth. No timeout, hold or
+        // autonomous completion can push the reveal against scroll direction.
         render(display,false);
         updateSticky();
       }else{
