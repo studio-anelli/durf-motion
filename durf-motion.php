@@ -16,7 +16,7 @@ final class DURF_Motion {
     const VERSION = '1.11.0';
 
     public static function defaults() {
-        return array('duration'=>900, 'distance'=>36, 'stagger'=>120, 'parallax'=>60, 'image_parallax'=>35, 'background_parallax'=>45, 'background_overscan'=>8, 'section_parallax'=>20, 'dots_enabled'=>1, 'dots_strength'=>100, 'dots_start'=>85, 'dots_end'=>15, 'dots_easing'=>'soft', 'parallax_easing'=>'soft', 'image_easing'=>'soft', 'background_easing'=>'soft', 'section_easing'=>'soft', 'scroll_enabled'=>0, 'scroll_smoothing'=>10, 'scroll_wheel'=>85, 'scroll_focus'=>'off', 'image_trigger'=>45, 'text_trigger'=>95, 'once'=>1, 'enabled'=>1, 'color_enabled'=>1, 'color_position'=>55, 'color_softness'=>'balanced', 'color_start'=>80, 'color_end'=>20, 'color_easing'=> 'smooth', 'color_cream'=>'#F8F4EC', 'color_orange'=>'#F16A37', 'color_green'=>'#507568', 'color_pink'=>'#DD8EB9', 'color_ink'=>'#25231F', 'header_enabled'=>0, 'header_mode'=>'transparent', 'header_contrast'=>'auto', 'header_selector'=>'.l-header', 'header_mono_logo'=>0);
+        return array('duration'=>900, 'distance'=>36, 'stagger'=>120, 'parallax'=>60, 'image_parallax'=>35, 'background_parallax'=>45, 'background_overscan'=>8, 'section_parallax'=>20, 'dots_enabled'=>1, 'dots_strength'=>100, 'dots_start'=>85, 'dots_end'=>15, 'dots_easing'=>'soft', 'parallax_easing'=>'soft', 'image_easing'=>'soft', 'background_easing'=>'soft', 'section_easing'=>'soft', 'scroll_enabled'=>0, 'scroll_smoothing'=>10, 'scroll_wheel'=>85, 'scroll_focus'=>'off', 'image_trigger'=>45, 'text_trigger'=>95, 'once'=>1, 'enabled'=>1, 'color_enabled'=>1, 'color_position'=>55, 'color_softness'=>'balanced', 'color_start'=>80, 'color_end'=>20, 'color_easing'=> 'smooth', 'color_cream'=>'#F8F4EC', 'color_orange'=>'#F16A37', 'color_green'=>'#507568', 'color_pink'=>'#DD8EB9', 'color_ink'=>'#25231F', 'header_enabled'=>0, 'header_mode'=>'transparent', 'header_contrast'=>'auto', 'header_selector'=>'.l-header', 'header_mono_logo'=>0, 'header_easing'=>'follow');
     }
     public static function settings() {
         return wp_parse_args(get_option(self::OPTION, array()), self::defaults());
@@ -77,6 +77,7 @@ final class DURF_Motion {
             'headerContrast' => $settings['header_contrast'],
             'headerSelector' => $settings['header_selector'],
             'headerMonoLogo' => !empty($settings['header_mono_logo']),
+            'headerEasing' => $settings['header_easing'],
         );
         wp_add_inline_script('durf-motion', 'window.DURFMotionConfig = ' . wp_json_encode($config) . ';', 'before');
         if (!empty($settings['header_enabled'])) {
@@ -518,6 +519,7 @@ $style=sprintf('--dm-dots-width:%s%%;--dm-dots-mobile-width:%s%%;--dm-dots-heigh
             'header_contrast'=>in_array($raw['header_contrast']??'',array('auto','light','dark'),true)?$raw['header_contrast']:'auto',
             'header_selector'=>self::header_selector($raw['header_selector']??'.l-header'),
             'header_mono_logo'=>empty($raw['header_mono_logo']) ? 0 : 1,
+            'header_easing'=>in_array($raw['header_easing']??'',array('follow','quick','soft','cinematic'),true)?$raw['header_easing']:'follow',
             'color_position'=>max(15,min(85,absint($raw['color_position'] ?? 55))),
             'color_softness'=>in_array($raw['color_softness'] ?? '',array('tight','balanced','atmospheric'),true) ? $raw['color_softness'] : 'balanced',
             'color_start'=>max(30,min(95,absint($raw['color_start'] ?? 80))),
@@ -575,7 +577,7 @@ $style=sprintf('--dm-dots-width:%s%%;--dm-dots-mobile-width:%s%%;--dm-dots-heigh
         <form method="post" action="options.php">
           <?php settings_fields('durf_motion'); ?>
           <nav class="dm-tab-links" aria-label="Motion settings categories" role="tablist">
-            <?php foreach(array('general'=>'General','typography'=>'Typography','images'=>'Images','parallax'=>'Parallax','dots'=>'Dots','scroll'=>'Scroll','colours'=>'Colours','sliders'=>'Sliders') as $key=>$label): ?>
+            <?php foreach(array('general'=>'General','typography'=>'Typography','images'=>'Images','parallax'=>'Parallax','dots'=>'Dots','scroll'=>'Scroll','colours'=>'Colours','header'=>'Header','sliders'=>'Sliders') as $key=>$label): ?>
               <button type="button" role="tab" id="dm-tab-<?php echo esc_attr($key); ?>" data-dm-tab="<?php echo esc_attr($key); ?>" aria-controls="dm-panel-<?php echo esc_attr($key); ?>" aria-selected="<?php echo $key==='general'?'true':'false'; ?>"><?php echo esc_html($label); ?></button>
             <?php endforeach; ?>
           </nav>
@@ -652,8 +654,15 @@ $style=sprintf('--dm-dots-width:%s%%;--dm-dots-mobile-width:%s%%;--dm-dots-heigh
             <tr><th scope="row">Easing</th><td><select name="<?php echo esc_attr(self::OPTION); ?>[color_easing]"><option value="smooth" <?php selected($s['color_easing'],'smooth'); ?>>Smooth (recommended)</option><option value="linear" <?php selected($s['color_easing'],'linear'); ?>>Linear</option></select></td></tr>
             </tbody></table>
             <p class="dm-tip">Add <code>dm-color-break</code> to a destination row to prevent a fade from the previous colour while keeping its fade to the following row. Example: orange → green, hard cut to cream, then cream → pink. The transition is centred around the chosen viewport position. Softness controls the length of the blend. For a seamless effect, put these classes on full-width adjacent rows. Do not apply colour flow to photographic rows.</p>
-            <h3>Adaptive header</h3>
-            <p class="description">Optional, off by default. Follow the colour of the section directly behind the header, not the section occupying most of the viewport. Built for Impreza's <code>.l-header</code> structure.</p>
+            <h3>WPBakery example</h3><p>Extra class name of each relevant row:</p>
+            <div class="dm-demo"><code>dm-color-flow dm-color-cream</code><span>→</span><code>dm-color-flow dm-color-orange</code><span>→</span><code>dm-color-flow dm-color-green</code><span>→</span><code>dm-color-flow dm-color-pink</code></div>
+            <p><strong>Footer connection:</strong> Add <code>dm-color-to-footer</code> to your final <code>dm-color-flow</code> row to blend the last row into the DURF Ink palette swatch (or a custom <code>data-dm-footer-color</code> HEX value). The plugin never repaints the footer itself. Leave this class off for a hard section-to-footer edge.</p>
+            <p><strong>Separate colour sequences:</strong> <code>dm-color-flow dm-color-orange</code> → <code>dm-color-flow dm-color-green</code> → <code>dm-color-flow dm-color-cream dm-color-break</code> → <code>dm-color-flow dm-color-pink</code>. The cream section cuts in immediately, then fades toward pink.</p>
+            <p>If you use a Raw HTML wrapper, you can also define any HEX colour with <code>data-dm-color="#abcdef"</code>.</p>
+          </div>
+          <div role="tabpanel" id="dm-panel-header" class="dm-panel" aria-labelledby="dm-tab-header">
+            <h2>Adaptive header</h2>
+            <p class="description">An independent header system with its own timing. Optional, off by default. Follow the colour of the section directly behind the header, not the section occupying most of the viewport. Built for Impreza's <code>.l-header</code> structure.</p>
             <table class="form-table" role="presentation"><tbody>
               <tr><th scope="row">Enable adaptive header</th><td><label><input type="checkbox" name="<?php echo esc_attr(self::OPTION); ?>[header_enabled]" value="1" <?php checked($s['header_enabled'],1); ?>> Adapt header colours on scroll</label></td></tr>
               <tr><th scope="row">Header appearance</th><td><select name="<?php echo esc_attr(self::OPTION); ?>[header_mode]">
@@ -665,15 +674,16 @@ $style=sprintf('--dm-dots-width:%s%%;--dm-dots-mobile-width:%s%%;--dm-dots-heigh
                 <option value="light" <?php selected($s['header_contrast'],'light'); ?>>Always Cream</option>
                 <option value="dark" <?php selected($s['header_contrast'],'dark'); ?>>Always Ink</option>
               </select></td></tr>
+              <tr><th scope="row">Transition easing</th><td><select name="<?php echo esc_attr(self::OPTION); ?>[header_easing]">
+                <option value="follow" <?php selected($s['header_easing'],'follow'); ?>>Follow section background (recommended)</option>
+                <option value="quick" <?php selected($s['header_easing'],'quick'); ?>>Quick — 180 ms ease-out</option>
+                <option value="soft" <?php selected($s['header_easing'],'soft'); ?>>Soft — 480 ms editorial</option>
+                <option value="cinematic" <?php selected($s['header_easing'],'cinematic'); ?>>Cinematic — 800 ms gradual</option>
+              </select><p class="description">Follow uses the background colour-flow engine's live blended colour without another delayed transition. Independent modes smooth the header separately.</p></td></tr>
               <tr><th scope="row">Header CSS selector</th><td><input class="regular-text" type="text" name="<?php echo esc_attr(self::OPTION); ?>[header_selector]" value="<?php echo esc_attr($s['header_selector']); ?>" placeholder=".l-header"> <p class="description">Default <code>.l-header</code> (Impreza). Change only if your header has a different wrapper.</p></td></tr>
               <tr><th scope="row">Monochrome image logo</th><td><label><input type="checkbox" name="<?php echo esc_attr(self::OPTION); ?>[header_mono_logo]" value="1" <?php checked($s['header_mono_logo'],1); ?>> Also recolour the logo if it is a one-colour image</label><p class="description">Leave off for multicolour, photographic or temporary DURF logos. Inline SVG logos using <code>currentColor</code> adapt automatically.</p></td></tr>
             </tbody></table>
             <p class="dm-tip">Works best with <code>dm-color-flow dm-color-green</code> and other DURF colour classes. On other rows, set <code>data-dm-header-bg="#507568"</code> on the section if necessary. Use <code>dm-header-light</code> or <code>dm-header-dark</code> on a section to override automatic foreground contrast, for example on photographic sections. Some opaque Impreza header variants may require using the <strong>Match section</strong> setting instead of Transparent.</p>
-            <h3>WPBakery example</h3><p>Extra class name of each relevant row:</p>
-            <div class="dm-demo"><code>dm-color-flow dm-color-cream</code><span>→</span><code>dm-color-flow dm-color-orange</code><span>→</span><code>dm-color-flow dm-color-green</code><span>→</span><code>dm-color-flow dm-color-pink</code></div>
-            <p><strong>Footer connection:</strong> Add <code>dm-color-to-footer</code> to your final <code>dm-color-flow</code> row to blend the last row into the DURF Ink palette swatch (or a custom <code>data-dm-footer-color</code> HEX value). The plugin never repaints the footer itself. Leave this class off for a hard section-to-footer edge.</p>
-            <p><strong>Separate colour sequences:</strong> <code>dm-color-flow dm-color-orange</code> → <code>dm-color-flow dm-color-green</code> → <code>dm-color-flow dm-color-cream dm-color-break</code> → <code>dm-color-flow dm-color-pink</code>. The cream section cuts in immediately, then fades toward pink.</p>
-            <p>If you use a Raw HTML wrapper, you can also define any HEX colour with <code>data-dm-color="#abcdef"</code>.</p>
           </div>
           <div role="tabpanel" id="dm-panel-sliders" class="dm-panel" aria-labelledby="dm-tab-sliders">
             <h2>Image sliders</h2>
