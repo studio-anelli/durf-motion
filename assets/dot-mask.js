@@ -66,7 +66,7 @@
     // Find the actual story column. Impreza may nest multiple vc_row/inner-row
     // wrappers, so the closest vc_row is not necessarily the shared parent.
     function findStickyCompanion(){
-      if(!scrollMode||!o.stickyText)return null;
+      if(!scrollMode||!o.stickyText){root.dataset.dmStickyStatus='disabled';return null;}
       const candidates=[];
       let row=root.closest('.vc_row');
       while(row){
@@ -86,13 +86,14 @@
         match=candidates.find(c=>c.sibling===explicit||c.sibling.contains(explicit));
       }
       if(!match)match=candidates[0];
-      if(!match)return null;
+      if(!match){root.dataset.dmStickyStatus='no-companion-column';return null;}
       const container=match.sibling;
       const node=container.querySelector('.vc_column-inner > .wpb_wrapper')||
         container.querySelector('.wpb_wrapper');
-      if(!node)return null;
+      if(!node){root.dataset.dmStickyStatus='no-text-wrapper';return null;}
       match.row.classList.add('dm-mask-story-row');
       container.classList.add('dm-mask-sticky-companion');
+      root.dataset.dmStickyStatus='active';
       return {node,container,row:match.row,shift:0,
         top:clamp(Number(o.stickyOffset)||0,0,300)};
     }
@@ -101,9 +102,11 @@
       if(!companion)return;
       const {node}=companion;
       if(window.innerWidth<768){
+        root.dataset.dmStickyStatus='mobile-disabled';
         if(companion.shift){node.style.translate='';companion.shift=0}
         return;
       }
+      root.dataset.dmStickyStatus='active';
       // CSS individual translate does not override existing theme transforms.
       const rect=node.getBoundingClientRect();
       const naturalTop=rect.top-companion.shift;
@@ -120,7 +123,7 @@
 
     let fullRadius=1200;
     let pairFrom=-1,pairTo=-1,lastPhotoRadius=-1,lastColourRadius=-1;
-    let target=0,current=0,velocity=0,prevScroll=window.scrollY,prevScrollTime=performance.now();
+    let target=0,current=0,velocity=0,prevDirection=0,prevScroll=window.scrollY,prevScrollTime=performance.now();
     let autoTime=0,paused=false,lastFrame=performance.now(),raf=0;
 
     function setRadii(nodes,r,key){
@@ -212,9 +215,16 @@
     }
     function onScroll(){
       const now=performance.now();
-      velocity=clamp((window.scrollY-prevScroll)/Math.max(16,now-prevScrollTime),-3,3);
+      const dy=window.scrollY-prevScroll;
+      velocity=clamp(dy/Math.max(16,now-prevScrollTime),-3,3);
       prevScroll=window.scrollY;prevScrollTime=now;
       target=scrollPosition();
+      const direction=Math.sign(dy);
+      if(direction&&prevDirection&&direction!==prevDirection){
+        // Don't keep moving in the previous direction after an explicit reversal.
+        current=target;
+      }
+      if(direction)prevDirection=direction;
     }
     function frame(now){
       const dt=Math.min(64,Math.max(0,now-lastFrame));lastFrame=now;
