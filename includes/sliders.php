@@ -26,7 +26,7 @@ final class DURF_Motion_Sliders {
         ));
     }
     public static function defaults() {
-        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1);
+        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1,'mask_grid'=>'6','mask_playback'=>'scroll','mask_duration'=>1100,'mask_interval'=>3500,'mask_scroll_distance'=>100,'mask_velocity'=>0,'mask_velocity_strength'=>35,'mask_height'=>75);
     }
     public static function settings($id) {
         $value=get_post_meta($id,self::META,true);
@@ -52,7 +52,8 @@ final class DURF_Motion_Sliders {
         echo '<div id="dm-slider-images" class="dm-slider-images" aria-live="polite"></div>';
         echo '<input type="hidden" id="dm-slider-ids" name="dm_slider[ids]" value="' . esc_attr(implode(',',array_map('absint',$s['ids']))) . '">';
         echo '<h3>Appearance</h3><div class="dm-slider-controls">';
-        self::select('layout','Composition',array('editorial'=>'Editorial: one dominant image','gallery'=>'Gallery: multiple images'),$s);
+        self::select('layout','Composition',array('editorial'=>'Editorial: one dominant image','gallery'=>'Gallery: multiple images','dot-mask'=>'Dot Mask: expanding circle reveal'),$s);
+        echo '<div class="dm-slider-regular">';
         self::select('direction','Direction',array('horizontal'=>'Horizontal: image ribbon','vertical'=>'Vertical: filmstrip'),$s);
         self::select('scroll_response','Respond to page scrolling',array('off'=>'Off: drag / swipe only','gentle'=>'Gentle: follow scroll','dynamic'=>'Dynamic: accelerate with scroll'),$s);
         self::select('ratio','Image ratio',array('16/9'=>'16:9','4/3'=>'4:3','1/1'=>'Square','3/2'=>'3:2','auto'=>'Original (natural)'),$s);
@@ -73,7 +74,19 @@ final class DURF_Motion_Sliders {
         self::checkbox('pause_hover','Pause autoplay while hovering',$s);
         self::checkbox('image_drift','Subtle cinematic image movement',$s);
         self::checkbox('captions','Show Media Library captions',$s);
-        echo '</div><p><strong>Editorial idea:</strong> use a vertical filmstrip for a photographic column beside text, or a wide horizontal ribbon. Page-scroll motion never blocks ordinary site scrolling. Autoplay and page-scroll influence work simultaneously: scrolling briefly accelerates or reverses the filmstrip, then autoplay resumes. Infinite loop seamlessly joins the last image to the first. Turn dragging off when you want motion to be entirely automatic. Reduced-motion visitors see a static, manually navigable gallery.</p>';
+        echo '</div></div><div class="dm-slider-mask-settings" style="display:none"><h3>Dot Mask — reveal</h3><div class="dm-slider-controls">';
+        self::select('mask_grid','Circle grid',array('1'=>'1 dot','4'=>'4 dots (2 × 2)','6'=>'6 dots (3 × 2)','8'=>'8 dots (4 × 2)','12'=>'12 dots (4 × 3)'),$s);
+        self::select('mask_playback','Playback',array('scroll'=>'Track page scroll position','auto'=>'Automatic'),$s);
+        self::integer('mask_duration','Reveal duration (ms)',250,6000,$s);
+        self::integer('mask_interval','Autoplay hold per slide (ms)',1000,15000,$s);
+        self::integer('mask_scroll_distance','Scroll distance per slide (vh)',40,250,$s);
+        self::integer('mask_height','Automatic slider height (vh)',35,100,$s);
+        self::checkbox('mask_velocity','React to scroll speed',$s);
+        self::integer('mask_velocity_strength','Scroll velocity influence (%)',0,100,$s);
+        self::select('fit','Image fit',array('cover'=>'Cover','contain'=>'Contain'),$s);
+        self::select('position','Focal point',array('50% 50%'=>'Center','50% 25%'=>'Top','50% 75%'=>'Bottom','25% 50%'=>'Left','75% 50%'=>'Right'),$s);
+        self::checkbox('pause_hover','Pause automatic playback on hover',$s);
+        echo '</div><p>The circles appear together and expand until the next image fills the frame. Scroll position is reversible; optional velocity temporarily boosts the radius without skipping slides. Reduced-motion visitors see a static or stepped transition.</p></div><p><strong>Editorial idea:</strong> use a vertical filmstrip for a photographic column beside text, or a wide horizontal ribbon. Page-scroll motion never blocks ordinary site scrolling. Autoplay and page-scroll influence work simultaneously: scrolling briefly accelerates or reverses the filmstrip, then autoplay resumes. Infinite loop seamlessly joins the last image to the first. Turn dragging off when you want motion to be entirely automatic. Reduced-motion visitors see a static, manually navigable gallery.</p>';
     }
     private static function select($key,$label,$options,$s) {
         echo '<label><span>'.esc_html($label).'</span><select name="dm_slider['.esc_attr($key).']">';
@@ -93,19 +106,24 @@ final class DURF_Motion_Sliders {
         $d=self::defaults();$ids=explode(',',is_scalar($input['ids']??null)?(string)$input['ids']:'');
         $ids=array_values(array_unique(array_filter(array_map('absint',$ids),function($id){return $id>0 && wp_attachment_is_image($id);})));$ids=array_slice($ids,0,80);
         $d['ids']=$ids;
-        foreach(array('layout'=>array('editorial','gallery'),'direction'=>array('horizontal','vertical'),'scroll_response'=>array('off','gentle','dynamic'),'ratio'=>array('16/9','4/3','1/1','3/2','auto'),'fit'=>array('cover','contain'),'position'=>array('50% 50%','50% 25%','50% 75%','25% 50%','75% 50%')) as $key=>$allowed){$v=$input[$key]??$d[$key];$d[$key]=in_array($v,$allowed,true)?$v:$d[$key];}
-        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
-        foreach(array('image_drift','captions','loop','autoplay','pause_hover','allow_drag') as $key)$d[$key]=!empty($input[$key])?1:0;
+        foreach(array('layout'=>array('editorial','gallery','dot-mask'),'direction'=>array('horizontal','vertical'),'scroll_response'=>array('off','gentle','dynamic'),'ratio'=>array('16/9','4/3','1/1','3/2','auto'),'fit'=>array('cover','contain'),'position'=>array('50% 50%','50% 25%','50% 75%','25% 50%','75% 50%')) as $key=>$allowed){$v=$input[$key]??$d[$key];$d[$key]=in_array($v,$allowed,true)?$v:$d[$key];}
+        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160),'mask_duration'=>array(250,6000),'mask_interval'=>array(1000,15000),'mask_scroll_distance'=>array(40,250),'mask_velocity_strength'=>array(0,100),'mask_height'=>array(35,100)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
+        foreach(array('image_drift','captions','loop','autoplay','pause_hover','allow_drag','mask_velocity') as $key)$d[$key]=!empty($input[$key])?1:0;
+        $d['mask_grid']=in_array((string)($input['mask_grid']??$d['mask_grid']),array('1','4','6','8','12'),true)?(string)$input['mask_grid']:'6';
+        $d['mask_playback']=in_array(($input['mask_playback']??''),array('scroll','auto'),true)?$input['mask_playback']:'scroll';
         update_post_meta($post_id,self::META,$d);
     }
     public static function frontend_assets() {
         wp_enqueue_style('dm-slider',plugins_url('../assets/slider.css',__FILE__),array(),DURF_Motion::VERSION);
         wp_register_script('dm-slider',plugins_url('../assets/slider.js',__FILE__),array(),DURF_Motion::VERSION,true);
+        wp_register_style('dm-dot-mask',plugins_url('../assets/dot-mask.css',__FILE__),array(),DURF_Motion::VERSION);
+        wp_register_script('dm-dot-mask',plugins_url('../assets/dot-mask.js',__FILE__),array(),DURF_Motion::VERSION,true);
     }
     public static function shortcode($atts) {
         $a=shortcode_atts(array('id'=>0),$atts,'durf_slider');$id=absint($a['id']);
         if (!$id || get_post_type($id)!==self::TYPE || get_post_status($id)!=='publish')return '';
         $s=self::settings($id);if(empty($s['ids']))return '';
+        if($s['layout']==='dot-mask')return self::mask_shortcode($id,$s);
         wp_enqueue_style('dm-slider');wp_enqueue_script('dm-slider');
         $html='';$found=0;
         foreach($s['ids'] as $attachment_id){
@@ -126,6 +144,43 @@ final class DURF_Motion_Sliders {
         return '<div class="'.esc_attr($classes).' splide" aria-label="'.esc_attr(get_the_title($id)).'" data-dm-slider="'.esc_attr(wp_json_encode($params)).'" style="'.esc_attr($styles).'">'
           .'<div class="splide__track"><ul class="splide__list">'.$html.'</ul></div>'
           .'</div>';
+    }
+
+    private static function mask_shortcode($id,$s){
+        $sources=array();
+        foreach($s['ids'] as $attachment_id){
+            $src=wp_get_attachment_image_url($attachment_id,'full');
+            if(!$src)continue;
+            $sources[]=array('src'=>$src,'alt'=>(string)get_post_meta($attachment_id,'_wp_attachment_image_alt',true));
+        }
+        if(count($sources)<2)return '';
+        wp_enqueue_style('dm-dot-mask');wp_enqueue_script('dm-dot-mask');
+        $grid=(int)$s['mask_grid'];$dimensions=array(1=>array(1,1),4=>array(2,2),6=>array(3,2),8=>array(4,2),12=>array(4,3));
+        if(!isset($dimensions[$grid]))$grid=6;
+        list($cols,$rows)=$dimensions[$grid];
+        $uid=function_exists('wp_unique_id')?wp_unique_id('dm-mask-'):uniqid('dm-mask-',false);
+        $clips='';
+        for($row=0;$row<$rows;$row++)for($col=0;$col<$cols;$col++){
+            $cx=($col+0.5)*1000/$cols;$cy=($row+0.5)*1000/$rows;
+            $clips.='<circle data-col="'.(int)$col.'" data-row="'.(int)$row.'" cx="'.esc_attr(round($cx,3)).'" cy="'.esc_attr(round($cy,3)).'" r="0"/>';
+        }
+        $opts=array(
+          'playback'=>$s['mask_playback'],'duration'=>(int)$s['mask_duration'],'interval'=>(int)$s['mask_interval'],
+          'scrollDistance'=>(int)$s['mask_scroll_distance'],'velocity'=>!empty($s['mask_velocity']),
+          'velocityStrength'=>(int)$s['mask_velocity_strength'],'fit'=>$s['fit'],'position'=>$s['position'],
+          'pauseHover'=>!empty($s['pause_hover']),'columns'=>$cols,'rows'=>$rows
+        );
+        $source_html='';
+        foreach($sources as $source)$source_html.='<span class="dm-mask-source" data-src="'.esc_url($source['src']).'" data-alt="'.esc_attr($source['alt']).'"></span>';
+        $classes='dm-mask-slider '.($s['mask_playback']==='scroll'?'dm-mask--scroll':'dm-mask--auto');
+        $scroll_height=100+(count($sources)-1)*(int)$s['mask_scroll_distance'];
+        $style='--dm-mask-height:'.(int)$s['mask_height'].'svh;--dm-mask-scroll-height:'.$scroll_height.'svh';
+        return '<div class="'.esc_attr($classes).'" data-dm-mask="'.esc_attr(wp_json_encode($opts)).'" style="'.esc_attr($style).'">'
+          .$source_html.'<div class="dm-mask-stage"><svg class="dm-mask-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-label="'.esc_attr(get_the_title($id)).'" role="img">'
+          .'<defs><clipPath id="'.esc_attr($uid).'" clipPathUnits="userSpaceOnUse">'.$clips.'</clipPath></defs>'
+          .'<image class="dm-mask-base" href="'.esc_url($sources[0]['src']).'" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid slice"/>'
+          .'<image class="dm-mask-incoming" href="'.esc_url($sources[1]['src']).'" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid slice" clip-path="url(#'.esc_attr($uid).')"/>'
+          .'</svg></div></div>';
     }
     public static function columns($cols){$cols['dm_slider_shortcode']='Shortcode';return $cols;}
     public static function column_content($column,$id){if($column==='dm_slider_shortcode')echo '<code>[durf_slider id="'.(int)$id.'"]</code>';}
