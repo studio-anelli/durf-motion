@@ -31,10 +31,15 @@
   function sectionColor(section){
     const custom=rgb(section.getAttribute('data-dm-header-bg'))||rgb(section.getAttribute('data-dm-color'));
     if(custom)return custom;
+    // When the colour-flow engine paints a blend, use the LIVE rendered colour.
+    // Static palette names would jump before the section transition completes.
+    if(section.classList.contains('dm-color-flow')){
+      const blended=rgb(getComputedStyle(section).backgroundColor);
+      if(blended)return blended;
+    }
     for(const key of palette){
       if(section.classList.contains('dm-color-'+key))return rgb(colors[key]);
     }
-    // The colour-flow engine paints the live blended colour inline.
     const actual=rgb(getComputedStyle(section).backgroundColor);
     if(actual)return actual;
     // Sometimes background is set on inner Impreza wrapper.
@@ -79,8 +84,12 @@
     let contrast=contrastMode;
     if(section?.classList.contains('dm-header-light'))contrast='light';
     if(section?.classList.contains('dm-header-dark'))contrast='dark';
+    // Pick the palette ink/cream with stronger contrast against the background.
+    // A simple brightness threshold incorrectly makes orange use light text.
+    const bgL=luminance(bg),lightL=luminance(light),darkL=luminance(dark);
+    const contrastRatio=l=> (Math.max(bgL,l)+.05)/(Math.min(bgL,l)+.05);
     const fg=contrast==='light'?light:contrast==='dark'?dark:
-      (luminance(bg)>.42?dark:light);
+      (contrastRatio(darkL)>=contrastRatio(lightL)?dark:light);
     const newValue=toCSS(bg)+'|'+toCSS(fg);
     if(last===newValue)return;
     last=newValue;
