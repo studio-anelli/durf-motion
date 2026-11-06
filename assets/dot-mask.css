@@ -12,21 +12,15 @@
 
 /* Slider container corners are independent from image-frame corners. */
 .dm-mask-slider .dm-mask-stage{border-radius:var(--dm-mask-container-radius,0px)}
-/* Let the companion text remain in view during scroll-driven image storytelling.
-   Enabled only on WPBakery rows selected through Dot Mask settings. */
+/* Companion text is positioned by dot-mask.js relative to the scroll slider.
+   CSS sticky was unreliable with some WPBakery / Impreza wrapper heights. */
 @media(min-width:768px){
-  /* The full-height column is the sticky boundary. The CONTENT, not the short
-     column-inner, needs to be sticky within it. */
-  .vc_row.dm-mask-story-row{align-items:stretch!important;overflow:visible!important}
-  .dm-mask-story-row > .dm-mask-sticky-companion{
-    display:flex!important;align-self:stretch!important;overflow:visible!important;
-  }
+  .dm-mask-story-row,
+  .dm-mask-story-row > .dm-mask-sticky-companion,
   .dm-mask-story-row > .dm-mask-sticky-companion > .vc_column-inner{
-    flex:1 1 auto!important;height:100%!important;min-height:100%!important;
-    position:relative!important;overflow:visible!important;
+    overflow:visible!important;
   }
   .dm-mask-story-row > .dm-mask-sticky-companion > .vc_column-inner > .wpb_wrapper{
-    position:sticky!important;top:var(--dm-mask-text-top,110px)!important;
-    align-self:flex-start;overflow:visible!important;
+    will-change:transform;
   }
 }
