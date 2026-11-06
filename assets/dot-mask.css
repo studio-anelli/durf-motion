@@ -9,3 +9,15 @@
 .dm-mask-slider .dm-mask-art image{pointer-events:none}
 @media(max-width:767px){.dm-mask-slider:not(.dm-mask--scroll) .dm-mask-stage{height:min(var(--dm-mask-height),75svh)}}
 @media(prefers-reduced-motion:reduce){.dm-mask-slider .dm-mask-art{transition:none!important}}
+
+/* Slider container corners are independent from image-frame corners. */
+.dm-mask-slider .dm-mask-stage{border-radius:var(--dm-mask-container-radius,0px)}
+/* Let the companion text remain in view during scroll-driven image storytelling.
+   Enabled only on WPBakery rows selected through Dot Mask settings. */
+@media(min-width:768px){
+  .dm-mask-story-row{align-items:stretch!important}
+  .dm-mask-story-row>.dm-mask-sticky-companion{align-self:stretch!important}
+  .dm-mask-story-row>.dm-mask-sticky-companion>.vc_column-inner{
+    position:sticky!important;top:var(--dm-mask-text-top,110px)!important;
+  }
+}
