@@ -53,7 +53,7 @@ final class DURF_Motion_Sliders {
         echo '<input type="hidden" id="dm-slider-ids" name="dm_slider[ids]" value="' . esc_attr(implode(',',array_map('absint',$s['ids']))) . '">';
         echo '<h3>Appearance</h3><div class="dm-slider-controls">';
         self::select('layout','Composition',array('editorial'=>'Editorial: one dominant image','gallery'=>'Gallery: multiple images','dot-mask'=>'Dot Mask: expanding circle reveal'),$s);
-        echo '<div class="dm-slider-regular">';
+        echo '</div><div class="dm-slider-regular"><div class="dm-slider-controls">';
         self::select('direction','Direction',array('horizontal'=>'Horizontal: image ribbon','vertical'=>'Vertical: filmstrip'),$s);
         self::select('scroll_response','Respond to page scrolling',array('off'=>'Off: drag / swipe only','gentle'=>'Gentle: follow scroll','dynamic'=>'Dynamic: accelerate with scroll'),$s);
         self::select('ratio','Image ratio',array('16/9'=>'16:9','4/3'=>'4:3','1/1'=>'Square','3/2'=>'3:2','auto'=>'Original (natural)'),$s);
