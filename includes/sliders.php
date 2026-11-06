@@ -26,7 +26,7 @@ final class DURF_Motion_Sliders {
         ));
     }
     public static function defaults() {
-        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1,'mask_grid'=>'6','mask_playback'=>'scroll','mask_duration'=>1100,'mask_interval'=>3500,'mask_scroll_distance'=>100,'mask_velocity'=>0,'mask_velocity_strength'=>35,'mask_height'=>75,'mask_easing'=>'editorial','mask_smoothing'=>45,'mask_spacing'=>85,'container_radius'=>0,'image_radius'=>0,'mask_sticky_text'=>0,'mask_sticky_offset'=>110,'mask_interleave'=>'off','mask_color'=>'section','mask_color_handoff'=>20,'mask_direction'=>'grow');
+        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1,'mask_grid'=>'6','mask_playback'=>'scroll','mask_duration'=>1100,'mask_interval'=>3500,'mask_scroll_distance'=>100,'mask_auto_scroll_strength'=>0,'mask_velocity'=>0,'mask_velocity_strength'=>35,'mask_height'=>75,'mask_easing'=>'editorial','mask_smoothing'=>45,'mask_spacing'=>85,'container_radius'=>0,'image_radius'=>0,'mask_interleave'=>'off','mask_color'=>'section','mask_color_handoff'=>20,'mask_direction'=>'grow');
     }
     public static function settings($id) {
         $value=get_post_meta($id,self::META,true);
@@ -82,14 +82,13 @@ final class DURF_Motion_Sliders {
         self::select('mask_playback','Playback',array('scroll'=>'Track page scroll position','auto'=>'Automatic'),$s);
         self::integer('mask_duration','Reveal duration (ms)',250,6000,$s);
         self::integer('mask_interval','Autoplay hold per slide (ms)',1000,15000,$s);
+        self::integer('mask_auto_scroll_strength','Automatic: page scroll influence (0–100%)',0,100,$s);
         self::integer('mask_scroll_distance','Scroll distance per slide (vh)',40,250,$s);
         self::integer('mask_height','Automatic slider height (vh)',35,100,$s);
         self::select('mask_easing','Growth easing',array('linear'=>'Linear','soft'=>'Soft','editorial'=>'Editorial (smoothest)'),$s);
         self::select('mask_direction','Circle transition',array('grow'=>'Small to big (reveal)','shrink'=>'Big to small (uncover)'),$s);
         self::integer('mask_smoothing','Scroll smoothing (0–95)',0,95,$s);
         self::integer('mask_spacing','Equal grid spacing (%)',30,100,$s);
-        self::checkbox('mask_sticky_text','Keep companion text column sticky',$s);
-        self::integer('mask_sticky_offset','Sticky text top offset (px)',0,300,$s);
         self::select('mask_interleave','Interleave solid colour',array('off'=>'Off: photos only','between'=>'Between every photo'),$s);
         self::select('mask_color','Solid colour',array('section'=>'Match section background','cream'=>'DURF Cream','orange'=>'DURF Orange','green'=>'DURF Green','pink'=>'DURF Pink','ink'=>'DURF Ink'),$s);
         self::integer('mask_color_handoff','Second circle growth lag (%)',0,65,$s);
@@ -98,7 +97,7 @@ final class DURF_Motion_Sliders {
         self::select('fit','Image fit',array('cover'=>'Cover','contain'=>'Contain'),$s);
         self::select('position','Focal point',array('50% 50%'=>'Center','50% 25%'=>'Top','50% 75%'=>'Bottom','25% 50%'=>'Left','75% 50%'=>'Right'),$s);
         self::checkbox('pause_hover','Pause automatic playback on hover',$s);
-        echo '</div><p><strong>Sticky companion:</strong> place the text in the neighbouring column of the same WPBakery row. If your page uses nested rows, assign the text column the Extra CSS class <code>dm-mask-text-column</code>. The slider reports its detection result in the <code>data-dm-sticky-status</code> attribute for debugging.</p><p>All dots expand together on an equally spaced grid. The outgoing photograph stays visible under the mask, and the next photo never reveals against a blank frame. Choose easing and optional scroll smoothing. Velocity response is limited to the current transition. Reduced-motion visitors see a static or stepped transition.</p></div><p><strong>Editorial idea:</strong> use a vertical filmstrip for a photographic column beside text, or a wide horizontal ribbon. Page-scroll motion never blocks ordinary site scrolling. Autoplay and page-scroll influence work simultaneously: scrolling briefly accelerates or reverses the filmstrip, then autoplay resumes. Infinite loop seamlessly joins the last image to the first. Turn dragging off when you want motion to be entirely automatic. Reduced-motion visitors see a static, manually navigable gallery.</p>';
+        echo '</div><p><strong>Companion text:</strong> use WPBakery’s own sticky column option. The plugin no longer moves neighbouring columns.</p><p>All dots expand together on an equally spaced grid. The outgoing photograph stays visible under the mask, and the next photo never reveals against a blank frame. Choose easing and optional scroll smoothing. Velocity response is limited to the current transition. Reduced-motion visitors see a static or stepped transition.</p></div><p><strong>Editorial idea:</strong> use a vertical filmstrip for a photographic column beside text, or a wide horizontal ribbon. Page-scroll motion never blocks ordinary site scrolling. Autoplay and page-scroll influence work simultaneously: scrolling briefly accelerates or reverses the filmstrip, then autoplay resumes. Infinite loop seamlessly joins the last image to the first. Turn dragging off when you want motion to be entirely automatic. Reduced-motion visitors see a static, manually navigable gallery.</p>';
     }
     private static function select($key,$label,$options,$s) {
         echo '<label><span>'.esc_html($label).'</span><select name="dm_slider['.esc_attr($key).']">';
@@ -119,8 +118,8 @@ final class DURF_Motion_Sliders {
         $ids=array_values(array_unique(array_filter(array_map('absint',$ids),function($id){return $id>0 && wp_attachment_is_image($id);})));$ids=array_slice($ids,0,80);
         $d['ids']=$ids;
         foreach(array('layout'=>array('editorial','gallery','dot-mask'),'direction'=>array('horizontal','vertical'),'scroll_response'=>array('off','gentle','dynamic'),'ratio'=>array('16/9','4/3','1/1','3/2','auto'),'fit'=>array('cover','contain'),'position'=>array('50% 50%','50% 25%','50% 75%','25% 50%','75% 50%')) as $key=>$allowed){$v=$input[$key]??$d[$key];$d[$key]=in_array($v,$allowed,true)?$v:$d[$key];}
-        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160),'mask_duration'=>array(250,6000),'mask_interval'=>array(1000,15000),'mask_scroll_distance'=>array(40,250),'mask_velocity_strength'=>array(0,100),'mask_height'=>array(35,100),'mask_smoothing'=>array(0,95),'mask_spacing'=>array(30,100),'container_radius'=>array(0,200),'image_radius'=>array(0,200),'mask_sticky_offset'=>array(0,300),'mask_color_handoff'=>array(0,65)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
-        foreach(array('image_drift','captions','loop','autoplay','pause_hover','allow_drag','mask_velocity','mask_sticky_text') as $key)$d[$key]=!empty($input[$key])?1:0;
+        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160),'mask_duration'=>array(250,6000),'mask_interval'=>array(1000,15000),'mask_scroll_distance'=>array(40,250),'mask_auto_scroll_strength'=>array(0,100),'mask_velocity_strength'=>array(0,100),'mask_height'=>array(35,100),'mask_smoothing'=>array(0,95),'mask_spacing'=>array(30,100),'container_radius'=>array(0,200),'image_radius'=>array(0,200),'mask_color_handoff'=>array(0,65)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
+        foreach(array('image_drift','captions','loop','autoplay','pause_hover','allow_drag','mask_velocity') as $key)$d[$key]=!empty($input[$key])?1:0;
         $d['mask_grid']=in_array((string)($input['mask_grid']??$d['mask_grid']),array('1','4','6','8','12'),true)?(string)$input['mask_grid']:'6';
         $d['mask_playback']=in_array(($input['mask_playback']??''),array('scroll','auto'),true)?$input['mask_playback']:'scroll';
         $d['mask_easing']=in_array(($input['mask_easing']??''),array('linear','soft','editorial'),true)?$input['mask_easing']:'editorial';
@@ -190,9 +189,8 @@ final class DURF_Motion_Sliders {
           'playback'=>$s['mask_playback'],'duration'=>(int)$s['mask_duration'],'interval'=>(int)$s['mask_interval'],
           'scrollDistance'=>(int)$s['mask_scroll_distance'],'velocity'=>!empty($s['mask_velocity']),
           'velocityStrength'=>(int)$s['mask_velocity_strength'],'fit'=>$s['fit'],'position'=>$s['position'],
-          'pauseHover'=>!empty($s['pause_hover']),'columns'=>$cols,'rows'=>$rows,
+          'pauseHover'=>!empty($s['pause_hover']),'autoScrollStrength'=>(int)$s['mask_auto_scroll_strength'],'columns'=>$cols,'rows'=>$rows,
           'easing'=>$s['mask_easing'],'smoothing'=>(int)$s['mask_smoothing'],'spacing'=>(int)$s['mask_spacing'],
-          'stickyText'=>!empty($s['mask_sticky_text']),'stickyOffset'=>(int)$s['mask_sticky_offset'],
           'imageRadius'=>(int)$s['image_radius'],'matchSection'=>$s['mask_color']==='section',
           'colorInterleave'=>$s['mask_interleave']==='between','accentColor'=>$color,
           'colorHandoff'=>(int)$s['mask_color_handoff'],
