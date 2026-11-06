@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.10.5
+- Replace the Dot Mask colour-to-photo opacity fade with independent circular masks: the solid colour and the next photograph each reveal through their own expanding circles.
+- Add optional inverted big-to-small transition: outgoing-photo circles contract to expose a colour layer and then the next photograph.
+- Rename the colour handoff control to Second circle reveal delay (%) (0–65%).
+- Fix sticky companion text layout by pinning the content wrapper within a full-height WPBakery sibling column rather than sticking the short column-inner.
+- Keep both directions scroll-reversible, preserve the final photograph, and avoid redundant final-frame image reassignments.
+- Default motion remains small-to-big with no colour insert; existing editorial/gallery sliders unchanged.
+
+# Changelog
+
 ## 1.10.4
 - Convert Dot Mask solid-colour interleaves from full-duration empty-looking slides into brief colour accents during photo-to-photo reveals.
 - Start revealing the incoming photo while the colour mask is still expanding; adjustable photo handoff point (0–60%).

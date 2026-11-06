@@ -22,5 +22,5 @@ jobs:
         run: find assets -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Confirm WordPress plugin version
         run: |
-          grep -q 'Version: 1.10.4' durf-motion.php
-          grep -q "const VERSION = '1.10.4'" durf-motion.php
+          grep -q 'Version: 1.10.5' durf-motion.php
+          grep -q "const VERSION = '1.10.5'" durf-motion.php
