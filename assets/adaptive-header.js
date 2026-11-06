@@ -50,7 +50,7 @@
     // A header can overlay a row; don't use elementFromPoint (it sees the header).
     // Prefer flow rows with known palette backgrounds over transparent wrappers.
     const candidates=document.querySelectorAll(
-      '.dm-color-flow, .l-section, .vc_row, .wpb_row, .dm-header-light, .dm-header-dark, [data-dm-header-bg]'
+      '.dm-color-flow, .l-section, .vc_row, .wpb_row, .l-footer, footer, .dm-header-light, .dm-header-dark, [data-dm-header-bg]'
     );
     let best=null,bestPriority=-Infinity;
     const x=window.innerWidth/2;
