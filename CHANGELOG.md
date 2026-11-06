@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.11.0
+- Add optional Adaptive Header settings to Colours: transparent header with automatic Ink/Cream text/icons, or section-matching header background and automatic contrast.
+- Detect the actual section below the header and follow live blended DURF colour-flow backgrounds, including coloured and custom HEX sections.
+- Add manual contrast overrides (`dm-header-light` / `dm-header-dark`) for photo sections and configurable header CSS selector, defaulting to Impreza `.l-header`.
+- Optional monochrome image logo recolouring, off by default, with reduced-motion support.
+- Entire feature disabled by default; existing motion, sliders and header remain unchanged until enabled.
+
 ## 1.10.7
 - Remove the automatic 420ms colour reveal completion/holding state that could bounce against reverse scrolling.
 - Keep both circle fields continuously driven by the same eased scroll position, with the second field lagging organically through its growth curve rather than a separate delayed animation.
