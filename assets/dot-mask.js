@@ -63,27 +63,45 @@
       return '#F8F4EC';
     }
     function colour(){return o.accentColor||getSectionColour()}
-    function stickyCompanion(){
-      if(!scrollMode||!o.stickyText)return;
-      let own=root.closest('.wpb_column,.vc_column_container');
-      if(!own)return;
-      const row=own.parentElement;
-      if(!row||!row.classList.contains('vc_row'))return;
-      const companions=Array.from(row.children).filter(el=>el!==own&&el.matches('.wpb_column,.vc_column_container'));
-      const companion=companions.find(col=>col.querySelector('.vc_column-inner > .wpb_wrapper'));
-      if(!companion)return;
+    // Transform-managed sticky companion: WPBakery column wrappers vary across themes,
+    // and CSS position:sticky often has no usable containing height.
+    function findStickyCompanion(){
+      if(!scrollMode||!o.stickyText)return null;
+      const row=root.closest('.vc_row');
+      if(!row)return null;
+      const cols=Array.from(row.querySelectorAll(':scope > .wpb_column, :scope > .vc_column_container'));
+      const own=cols.find(col=>col.contains(root));
+      const other=cols.find(col=>col!==own&&col.querySelector('.vc_column-inner .wpb_wrapper'));
+      if(!own||!other)return null;
+      const content=other.querySelector('.vc_column-inner > .wpb_wrapper')||other.querySelector('.wpb_wrapper');
+      if(!content)return null;
       row.classList.add('dm-mask-story-row');
-      companion.classList.add('dm-mask-sticky-companion');
-      companion.style.setProperty('--dm-mask-text-top',clamp(Number(o.stickyOffset)||0,0,300)+'px');
-      // A sticky element needs a tall parent. Stretch the column and its inner
-      // wrapper to the height of the scroll-driven slider column.
-      companion.style.alignSelf='stretch';
+      other.classList.add('dm-mask-sticky-companion');
+      return {element:content,shift:0,top:clamp(Number(o.stickyOffset)||0,0,300)};
+    }
+    const companion=findStickyCompanion();
+    function updateSticky(){
+      if(!companion)return;
+      const node=companion.element;
+      if(window.innerWidth<768){if(companion.shift){node.style.transform='';companion.shift=0}return}
+      const rect=node.getBoundingClientRect();
+      const naturalTop=rect.top-companion.shift;
+      const end=root.getBoundingClientRect().bottom;
+      const limit=Math.max(0,end-naturalTop-rect.height-16);
+      const shift=clamp(companion.top-naturalTop,0,limit);
+      if(Math.abs(shift-companion.shift)>.2){
+        companion.shift=shift;
+        node.style.transform=shift?'translate3d(0,'+shift+'px,0)':'';
+      }
     }
 
     let fullRadius=1200;
     let pairFrom=-1,pairTo=-1,lastPhotoRadius=-1,lastColourRadius=-1;
     let target=0,current=0,velocity=0,prevScroll=window.scrollY,prevScrollTime=performance.now();
     let autoTime=0,paused=false,lastFrame=performance.now(),raf=0;
+    // Once the colour reveal is underway and scrolling stops, finish the
+    // two-mask crossover without advancing the physical page position.
+    let lastScrollInput=performance.now(),completion=null,heldStep=-1,heldAt=0;
     function setRadii(nodes,r,key){
       if(key==='photo'&&Math.abs(lastPhotoRadius-r)<.02)return;
       if(key==='colour'&&Math.abs(lastColourRadius-r)<.02)return;
@@ -174,6 +192,7 @@
       velocity=clamp((window.scrollY-prevScroll)/Math.max(16,now-prevScrollTime),-3,3);
       prevScroll=window.scrollY;prevScrollTime=now;
       target=scrollPosition();
+      lastScrollInput=now;
     }
     function frame(now){
       const dt=Math.min(64,Math.max(0,now-lastFrame));lastFrame=now;
@@ -191,7 +210,37 @@
             display=index+clamp(fraction+boost,.001,.999);
           }
         }
+        if(withColour&&!reduced){
+          // Keep a finished photo stable until scrolling catches up, but allow
+          // a clear upward gesture to reverse the transition.
+          if(heldStep>=0){
+            if(target<heldAt-.08)heldStep=-1;
+            else if(target>=heldStep-.001)heldStep=-1;
+            else display=Math.max(display,heldStep);
+          }
+          if(completion){
+            if(target<completion.targetAtStart-.08){completion=null}
+            else{
+              const t=clamp((now-completion.started)/420,0,1);
+              const done=t*t*(3-2*t);
+              display=Math.max(display,completion.from+(completion.index+1-completion.from)*done);
+              if(t>=1){
+                heldStep=completion.index+1;
+                heldAt=completion.targetAtStart;
+                completion=null;
+              }
+            }
+          }
+          if(!completion&&heldStep<0&&now-lastScrollInput>180){
+            const index=Math.floor(display);
+            const fraction=display-index;
+            if(index<count-1&&fraction>.2&&fraction<.98){
+              completion={index,from:display,started:now,targetAtStart:target};
+            }
+          }
+        }
         render(display,false);
+        updateSticky();
       }else{
         if(!paused&&!reduced)autoTime+=dt;
         const cycle=interval+duration;
@@ -201,7 +250,7 @@
       }
       raf=requestAnimationFrame(frame);
     }
-    resize();stickyCompanion();
+    resize();updateSticky();
     if(scrollMode){target=current=scrollPosition();window.addEventListener('scroll',onScroll,{passive:true})}
     if(typeof ResizeObserver==='function')new ResizeObserver(resize).observe(stage);
     else window.addEventListener('resize',resize,{passive:true});

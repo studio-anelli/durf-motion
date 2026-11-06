@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.6
+- In scroll-controlled Dot Mask with a colour interleave, finish an initiated colour-to-photo circular crossover automatically after the user stops scrolling. This prevents the image from being stranded on a mostly solid-colour intermediate frame; physical page scrolling remains user-controlled.
+- Hold the completed image until scroll position catches up, while allowing a deliberate reverse scroll gesture to restore reversible transitions.
+- Replace CSS-only sticky companion text with animation-frame positioning relative to the scroll slider's actual boundaries, avoiding WPBakery short-column sticky constraints.
+- Sticky companion positioning is desktop-only and remains optional. Existing sliders without colour interleaves or sticky text remain unchanged.
+
 ## 1.10.5
 - Replace the Dot Mask colour-to-photo opacity fade with independent circular masks: the solid colour and the next photograph each reveal through their own expanding circles.
 - Add optional inverted big-to-small transition: outgoing-photo circles contract to expose a colour layer and then the next photograph.
