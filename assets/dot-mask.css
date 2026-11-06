@@ -1,0 +1,11 @@
+/* Dot Mask slider, independent from filmstrip sliders. */
+.dm-mask-slider{position:relative;display:block;box-sizing:border-box;width:100%;--dm-mask-height:75svh;--dm-mask-background:#25231f}
+.dm-mask-slider *{box-sizing:border-box}
+.dm-mask-slider .dm-mask-stage{position:relative;width:100%;height:var(--dm-mask-height);min-height:300px;overflow:hidden;background:var(--dm-mask-background);isolation:isolate}
+.dm-mask-slider .dm-mask-art{display:block;width:100%;height:100%;overflow:hidden}
+.dm-mask-slider .dm-mask-source{display:none}
+.dm-mask-slider.dm-mask--scroll{height:var(--dm-mask-scroll-height,250svh)}
+.dm-mask-slider.dm-mask--scroll .dm-mask-stage{position:sticky;top:0;height:100svh;min-height:300px}
+.dm-mask-slider .dm-mask-art image{pointer-events:none}
+@media(max-width:767px){.dm-mask-slider:not(.dm-mask--scroll) .dm-mask-stage{height:min(var(--dm-mask-height),75svh)}}
+@media(prefers-reduced-motion:reduce){.dm-mask-slider .dm-mask-art{transition:none!important}}
