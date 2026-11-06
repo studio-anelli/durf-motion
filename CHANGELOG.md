@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.10.7
+- Remove the automatic 420ms colour reveal completion/holding state that could bounce against reverse scrolling.
+- Keep both circle fields continuously driven by the same eased scroll position, with the second field lagging organically through its growth curve rather than a separate delayed animation.
+- Respond immediately when the visitor reverses scroll direction, including with smoothing enabled.
+- Improve sticky companion discovery across nested WPBakery rows; support the explicit `dm-mask-text-column` class, use independent CSS translate and provide `data-dm-sticky-status` diagnostics.
+- Retain scroll-only and automatic playback modes, accessible reduced-motion handling and existing filmstrip sliders.
+
+# Changelog
+
 ## 1.10.6
 - In scroll-controlled Dot Mask with a colour interleave, finish an initiated colour-to-photo circular crossover automatically after the user stops scrolling. This prevents the image from being stranded on a mostly solid-colour intermediate frame; physical page scrolling remains user-controlled.
 - Hold the completed image until scroll position catches up, while allowing a deliberate reverse scroll gesture to restore reversible transitions.
