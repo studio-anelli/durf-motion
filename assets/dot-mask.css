@@ -24,3 +24,17 @@
     will-change:transform;
   }
 }
+
+/* WPBakery sometimes applies overflow clipping on intermediate content wrappers.
+   Allow the optional companion to travel through the height of its story row. */
+@media(min-width:768px){
+  .dm-mask-story-row > .dm-mask-sticky-companion,
+  .dm-mask-story-row > .dm-mask-sticky-companion > .vc_column-inner,
+  .dm-mask-story-row > .dm-mask-sticky-companion > .vc_column-inner > .wpb_wrapper{
+    overflow:visible!important;
+  }
+  .dm-mask-story-row > .dm-mask-sticky-companion{
+    align-self:stretch!important;
+    position:relative;
+  }
+}
