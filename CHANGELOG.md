@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.10.4
+- Convert Dot Mask solid-colour interleaves from full-duration empty-looking slides into brief colour accents during photo-to-photo reveals.
+- Start revealing the incoming photo while the colour mask is still expanding; adjustable photo handoff point (0–60%).
+- Restore the original per-photo scroll distance; colour no longer doubles the length of a scroll-driven sequence.
+- Keep the outgoing photograph visible throughout, with no deliberate blank full-frame colour interval.
+- Existing filmstrip sliders are unaffected.
+
 ## 1.10.3
 - Optional sticky companion text column when a scroll-driven Dot Mask Slider shares a WPBakery row with text; configurable top offset in pixels, desktop-only.
 - Separate container and image corner radius controls (pixels) for editorial, gallery, and Dot Mask sliders.
