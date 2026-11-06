@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.10.3
+- Optional sticky companion text column when a scroll-driven Dot Mask Slider shares a WPBakery row with text; configurable top offset in pixels, desktop-only.
+- Separate container and image corner radius controls (pixels) for editorial, gallery, and Dot Mask sliders.
+- Optional alternating full-frame solid colour slides between photographs, using existing DURF palette or the parent section background.
+- Dot Mask SVG keeps image and colour layers under the same circular reveal; optional rounded image clipping.
+- Context-sensitive slider settings hide irrelevant controls. All features disabled or set to zero by default.
+
 ## 1.10.2
 - Keep outgoing image continuously visible underneath the incoming dot-mask reveal, including the last frame of scroll mode.
 - Add Editorial / Soft / Linear growth easing and adjustable scroll smoothing.
