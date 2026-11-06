@@ -37,6 +37,7 @@
     const ease=easing[o.easing]||easing.soft;
     const smoothing=clamp(Number(o.smoothing)||0,0,95)/100;
     const velocityFactor=o.velocity?clamp(Number(o.velocityStrength)||35,0,100)/100:0;
+    const autoScrollStrength=clamp(Number(o.autoScrollStrength)||0,0,100)/100;
     const focal=String(o.position||'50% 50%').split(' ').map(Number);
     const x=(focal[0]||50)<40?'xMin':(focal[0]||50)>60?'xMax':'xMid';
     const y=(focal[1]||50)<40?'YMin':(focal[1]||50)>60?'YMax':'YMid';
@@ -63,68 +64,11 @@
       return '#F8F4EC';
     }
     function colour(){return o.accentColor||getSectionColour()}
-    // Find the actual story column. Impreza may nest multiple vc_row/inner-row
-    // wrappers, so the closest vc_row is not necessarily the shared parent.
-    function findStickyCompanion(){
-      if(!scrollMode||!o.stickyText){root.dataset.dmStickyStatus='disabled';return null;}
-      const candidates=[];
-      let row=root.closest('.vc_row');
-      while(row){
-        const columns=Array.from(row.children).filter(el=>el.matches('.wpb_column,.vc_column_container'));
-        const own=columns.find(col=>col.contains(root));
-        if(own&&columns.length>1){
-          const sibling=columns.find(col=>col!==own&&col.querySelector('.wpb_wrapper'));
-          if(sibling)candidates.push({row,sibling});
-        }
-        row=row.parentElement?row.parentElement.closest('.vc_row'):null;
-      }
-      // A deliberately named WPBakery text column is preferable, but ordinary
-      // two-column rows still work without any manual classes.
-      const explicit=document.querySelector('.dm-mask-text-column');
-      let match=null;
-      if(explicit){
-        match=candidates.find(c=>c.sibling===explicit||c.sibling.contains(explicit));
-      }
-      if(!match)match=candidates[0];
-      if(!match){root.dataset.dmStickyStatus='no-companion-column';return null;}
-      const container=match.sibling;
-      const node=container.querySelector('.vc_column-inner > .wpb_wrapper')||
-        container.querySelector('.wpb_wrapper');
-      if(!node){root.dataset.dmStickyStatus='no-text-wrapper';return null;}
-      match.row.classList.add('dm-mask-story-row');
-      container.classList.add('dm-mask-sticky-companion');
-      root.dataset.dmStickyStatus='active';
-      return {node,container,row:match.row,shift:0,
-        top:clamp(Number(o.stickyOffset)||0,0,300)};
-    }
-    const companion=findStickyCompanion();
-    function updateSticky(){
-      if(!companion)return;
-      const {node}=companion;
-      if(window.innerWidth<768){
-        root.dataset.dmStickyStatus='mobile-disabled';
-        if(companion.shift){node.style.translate='';companion.shift=0}
-        return;
-      }
-      root.dataset.dmStickyStatus='active';
-      // CSS individual translate does not override existing theme transforms.
-      const rect=node.getBoundingClientRect();
-      const naturalTop=rect.top-companion.shift;
-      const rowEnd=companion.row.getBoundingClientRect().bottom;
-      const sliderEnd=root.getBoundingClientRect().bottom;
-      const end=Math.min(rowEnd,sliderEnd);
-      const maxShift=Math.max(0,end-naturalTop-rect.height-12);
-      const shift=clamp(companion.top-naturalTop,0,maxShift);
-      if(Math.abs(shift-companion.shift)>.25){
-        companion.shift=shift;
-        node.style.translate=shift?'0 '+shift.toFixed(2)+'px':'';
-      }
-    }
-
     let fullRadius=1200;
     let pairFrom=-1,pairTo=-1,lastPhotoRadius=-1,lastColourRadius=-1;
     let target=0,current=0,velocity=0,prevDirection=0,prevScroll=window.scrollY,prevScrollTime=performance.now();
     let autoTime=0,paused=false,lastFrame=performance.now(),raf=0;
+    let autoMomentum=0,autoLastY=window.scrollY,autoLastTime=performance.now();
 
     function setRadii(nodes,r,key){
       if(key==='photo'&&Math.abs(lastPhotoRadius-r)<.02)return;
@@ -226,6 +170,13 @@
       }
       if(direction)prevDirection=direction;
     }
+    function onAutoScroll(){
+      const now=performance.now();
+      const dy=window.scrollY-autoLastY;
+      const dt=Math.max(16,now-autoLastTime);
+      autoLastY=window.scrollY;autoLastTime=now;
+      if(Math.abs(dy)>.3)autoMomentum=clamp(dy/dt*1.2,-2.5,2.5);
+    }
     function frame(now){
       const dt=Math.min(64,Math.max(0,now-lastFrame));lastFrame=now;
       if(scrollMode){
@@ -245,9 +196,14 @@
         // Scroll progress is the sole source of truth. No timeout, hold or
         // autonomous completion can push the reveal against scroll direction.
         render(display,false);
-        updateSticky();
       }else{
-        if(!paused&&!reduced)autoTime+=dt;
+        if(!paused&&!reduced){
+          // Normal speed 1x, briefly modulated by signed page scroll velocity.
+          // Down speeds forward, up slows or reverses, then decays to 1x.
+          const factor=clamp(1+autoMomentum*autoScrollStrength,-1.5,3.5);
+          autoTime=Math.max(0,autoTime+dt*factor);
+        }
+        autoMomentum*=Math.exp(-dt/280);
         const cycle=interval+duration;
         const index=Math.floor(autoTime/cycle);
         const within=autoTime%cycle;
@@ -255,8 +211,9 @@
       }
       raf=requestAnimationFrame(frame);
     }
-    resize();updateSticky();
+    resize();
     if(scrollMode){target=current=scrollPosition();window.addEventListener('scroll',onScroll,{passive:true})}
+    else if(autoScrollStrength>0){window.addEventListener('scroll',onAutoScroll,{passive:true})}
     if(typeof ResizeObserver==='function')new ResizeObserver(resize).observe(stage);
     else window.addEventListener('resize',resize,{passive:true});
     if(o.pauseHover&&!scrollMode){
