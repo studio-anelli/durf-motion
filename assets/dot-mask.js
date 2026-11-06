@@ -149,11 +149,13 @@
     }
     function render(total,loop){
       if(!loop&&total>=count-1){
-        // Stable final state, without a blank frame.
-        pairFrom=pairTo=-1;
-        base.setAttribute('href',source(count-1));
-        photoLayer.setAttribute('opacity','0');
-        colourLayer.setAttribute('opacity','0');
+        // Stable final photograph; avoid rewriting its href on every frame.
+        if(pairFrom!==count-1||pairTo!==count-1){
+          pairFrom=pairTo=count-1;
+          base.setAttribute('href',source(count-1));
+          photoLayer.setAttribute('opacity','0');
+          colourLayer.setAttribute('opacity','0');
+        }
         return;
       }
       const idx=Math.max(0,Math.floor(total));
