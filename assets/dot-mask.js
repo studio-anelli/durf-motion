@@ -18,7 +18,8 @@
     root.dataset.dmMaskReady='1';
     const scrollMode=opts.playback==='scroll';
     const count=sources.length;
-    const radiusEnd=1600;
+    let radiusEnd=1600;
+    let canvasHeight=1000;
     const duration=clamp(Number(opts.duration)||1100,250,6000);
     const interval=clamp(Number(opts.interval)||3500,1000,15000);
     const velocityInfluence=opts.velocity?clamp(Number(opts.velocityStrength)||35,0,100)/100:0;
@@ -32,16 +33,31 @@
     const preserve=aspect();
     base.setAttribute('preserveAspectRatio',preserve);
     incoming.setAttribute('preserveAspectRatio',preserve);
-    let from=-1,to=-1,phase=-1,lastIndex=-1,position=0,velocity=0,lastPageY=window.scrollY,lastTime=performance.now();
+    let from=-1,to=-1,phase=-1,lastIndex=-1,velocity=0,lastPageY=window.scrollY,lastTime=performance.now();
     let autoStart=performance.now(),paused=false,raf=0;
     function image(index){return sources[((index%count)+count)%count].getAttribute('data-src')||''}
     function alt(index){return sources[((index%count)+count)%count].getAttribute('data-alt')||''}
     function setPair(i,j){
       if(i===from&&j===to)return;
-      from=i;to=j;
+      from=i;to=j;phase=-1;
       base.setAttribute('href',image(i));
       incoming.setAttribute('href',image(j));
       root.setAttribute('aria-label',alt(i)||'Photo slider');
+    }
+    function resizeMask(){
+      const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);
+      canvasHeight=1000*h/w;
+      radiusEnd=Math.hypot(1000,canvasHeight)*1.2;
+      const art=root.querySelector('.dm-mask-art');
+      if(art)art.setAttribute('viewBox','0 0 1000 '+canvasHeight);
+      [base,incoming].forEach(image=>{image.setAttribute('height',String(canvasHeight));image.setAttribute('width','1000')});
+      circles.forEach(circle=>{
+        const col=Number(circle.getAttribute('data-col'));
+        const row=Number(circle.getAttribute('data-row'));
+        circle.setAttribute('cx',String((col+.5)*1000/Math.max(1,Number(opts.columns)||1)));
+        circle.setAttribute('cy',String((row+.5)*canvasHeight/Math.max(1,Number(opts.rows)||1)));
+      });
+      phase=-1;
     }
     function showMask(progress){
       if(reduced){incoming.setAttribute('opacity',progress>=0.5?'1':'0');return}
@@ -99,6 +115,9 @@
       }
       raf=requestAnimationFrame(frame);
     }
+    resizeMask();
+    window.addEventListener('resize',resizeMask,{passive:true});
+    if(typeof ResizeObserver==='function')new ResizeObserver(resizeMask).observe(stage);
     if(scrollMode){
       window.addEventListener('scroll',onScroll,{passive:true});
       window.addEventListener('resize',renderScroll,{passive:true});
