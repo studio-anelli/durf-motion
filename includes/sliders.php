@@ -214,7 +214,7 @@ final class DURF_Motion_Sliders {
           .'<g clip-path="url(#'.esc_attr($uid).'-round)">'
           .'<rect class="dm-mask-base-fill" x="0" y="0" width="1000" height="1000" fill="transparent"/>'
           .'<image class="dm-mask-base" href="'.esc_url($first['src']).'" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid slice"/>'
-          .'<g clip-path="url(#'.esc_attr($uid).')">'
+          .'<g class="dm-mask-incoming-layer" clip-path="url(#'.esc_attr($uid).')">'
           .'<rect class="dm-mask-incoming-fill" x="0" y="0" width="1000" height="1000" fill="transparent"/>'
           .'<image class="dm-mask-incoming" href="'.esc_url($sources[1]['src']??'').'" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid slice"/>'
           .'</g></g></svg></div></div>';
