@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.8
+- Increase the automatic height for desktop natural galleries and add a custom horizontal photo height in viewport units.
+
 ## 1.11.7
 - Show original-proportion photos at a shared height in horizontal galleries. Portraits take less horizontal space and all photos remain uncropped.
 
