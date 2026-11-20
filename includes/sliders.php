@@ -53,6 +53,8 @@ final class DURF_Motion_Sliders {
         echo '<input type="hidden" id="dm-slider-ids" name="dm_slider[ids]" value="' . esc_attr(implode(',',array_map('absint',$s['ids']))) . '">';
         echo '<h3>Appearance</h3><div class="dm-slider-controls">';
         self::select('layout','Composition',array('editorial'=>'Editorial: one dominant image','gallery'=>'Gallery: multiple images','dot-mask'=>'Dot Mask: expanding circle reveal'),$s);
+        self::select('fit','Image fit',array('cover'=>'Cover','contain'=>'Contain'),$s);
+        self::select('position','Focal point',array('50% 50%'=>'Center','50% 25%'=>'Top','50% 75%'=>'Bottom','25% 50%'=>'Left','75% 50%'=>'Right'),$s);
         echo '</div><h3>Corner styling</h3><div class="dm-slider-controls">';
         self::integer('container_radius','Container border radius (px)',0,200,$s);
         self::integer('image_radius','Image border radius (px)',0,200,$s);
@@ -60,8 +62,6 @@ final class DURF_Motion_Sliders {
         self::select('direction','Direction',array('horizontal'=>'Horizontal: image ribbon','vertical'=>'Vertical: filmstrip'),$s);
         self::select('scroll_response','Respond to page scrolling',array('off'=>'Off: drag / swipe only','gentle'=>'Gentle: follow scroll','dynamic'=>'Dynamic: accelerate with scroll'),$s);
         self::select('ratio','Image ratio',array('16/9'=>'16:9','4/3'=>'4:3','1/1'=>'Square','3/2'=>'3:2','auto'=>'Original (natural)'),$s);
-        self::select('fit','Image fit',array('cover'=>'Cover','contain'=>'Contain'),$s);
-        self::select('position','Focal point',array('50% 50%'=>'Center','50% 25%'=>'Top','50% 75%'=>'Bottom','25% 50%'=>'Left','75% 50%'=>'Right'),$s);
         self::integer('gap','Gap (px)',0,60,$s);
         self::integer('peek','Editorial next image visible (%)',5,35,$s);
         self::integer('speed','Snap transition (ms)',200,1800,$s);
@@ -95,8 +95,6 @@ final class DURF_Motion_Sliders {
         self::integer('mask_color_handoff','Second circle growth lag (%)',0,65,$s);
         self::checkbox('mask_velocity','React to scroll speed',$s);
         self::integer('mask_velocity_strength','Scroll velocity influence (%)',0,100,$s);
-        self::select('fit','Image fit',array('cover'=>'Cover','contain'=>'Contain'),$s);
-        self::select('position','Focal point',array('50% 50%'=>'Center','50% 25%'=>'Top','50% 75%'=>'Bottom','25% 50%'=>'Left','75% 50%'=>'Right'),$s);
         self::checkbox('pause_hover','Pause automatic playback on hover',$s);
         echo '</div><p><strong>Companion text:</strong> use WPBakery’s own sticky column option. The plugin no longer moves neighbouring columns.</p><p>All dots expand together on an equally spaced grid. The outgoing photograph stays visible under the mask, and the next photo never reveals against a blank frame. Choose easing and optional scroll smoothing. Velocity response is limited to the current transition. Reduced-motion visitors see a static or stepped transition.</p></div><p><strong>Editorial idea:</strong> use a vertical filmstrip for a photographic column beside text, or a wide horizontal ribbon. Page-scroll motion never blocks ordinary site scrolling. Autoplay and page-scroll influence work simultaneously: scrolling briefly accelerates or reverses the filmstrip, then autoplay resumes. Infinite loop seamlessly joins the last image to the first. Turn dragging off when you want motion to be entirely automatic. Reduced-motion visitors see a static, manually navigable gallery.</p>';
     }
@@ -155,7 +153,7 @@ final class DURF_Motion_Sliders {
             $found++;
         }
         if(!$found)return '';
-        $params=array('layout'=>$s['layout'],'gap'=>(int)$s['gap'],'peek'=>(int)$s['peek'],'speed'=>(int)$s['speed'],'loop'=>!empty($s['loop']),'autoplay'=>!empty($s['autoplay']),'autoplaySpeed'=>(int)$s['autoplay_speed'],'pauseHover'=>!empty($s['pause_hover']),'allowDrag'=>!empty($s['allow_drag']),'direction'=>$s['direction'],'scrollResponse'=>$s['scroll_response'],'scrollStrength'=>(int)$s['scroll_strength'],'smoothness'=>(int)$s['smoothness'],'imageDrift'=>!empty($s['image_drift']));
+        $params=array('layout'=>$s['layout'],'gap'=>(int)$s['gap'],'peek'=>(int)$s['peek'],'speed'=>(int)$s['speed'],'loop'=>!empty($s['loop']),'autoplay'=>!empty($s['autoplay']),'autoplaySpeed'=>(int)$s['autoplay_speed'],'pauseHover'=>!empty($s['pause_hover']),'allowDrag'=>!empty($s['allow_drag']),'direction'=>$s['direction'],'scrollResponse'=>$s['scroll_response'],'scrollStrength'=>(int)$s['scroll_strength'],'smoothness'=>(int)$s['smoothness'],'imageDrift'=>$s['fit']==='cover'&&!empty($s['image_drift']));
         $classes='dm-slider dm-slider--'.$s['layout'].' dm-slider--'.$s['direction'];
         $styles='--dm-slider-container-radius:'.(int)$s['container_radius'].'px;--dm-slider-image-radius:'.(int)$s['image_radius'].'px;--dm-slider-gap:'.$s['gap'].'px;--dm-slider-ratio:'.($s['ratio']==='auto'?'auto':$s['ratio']).';--dm-slider-fit:'.$s['fit'].';--dm-slider-position:'.$s['position'].';--dm-slider-peek:'.$s['peek'].'%;--dm-slider-viewport-height:'.$s['viewport_height'].'svh;--dm-slider-vertical-slide-height:'.$s['vertical_slide_height'].'svh;';
         return '<div class="'.esc_attr($classes).' splide" aria-label="'.esc_attr(get_the_title($id)).'" data-dm-slider="'.esc_attr(wp_json_encode($params)).'" style="'.esc_attr($styles).'">'
