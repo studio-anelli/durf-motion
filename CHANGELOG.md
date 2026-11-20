@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.4
+- Add a viewport height setting for scroll-driven Dot Mask sliders. Both playback modes use their chosen height on mobile and desktop.
+
 ## 1.11.3
 - Add drag-and-drop photo ordering in the slide editor and keep thumbnails mounted when using the reorder arrows.
 
