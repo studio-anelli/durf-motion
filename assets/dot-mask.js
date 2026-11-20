@@ -26,6 +26,12 @@
     const reduced=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const count=sources.length;
     const scrollMode=o.playback==='scroll';
+    let header, adminBar, pinTop=0;
+    if(scrollMode){
+      const selector=window.DURFMotionConfig?.headerSelector||'.l-header, header.site-header';
+      try { header=document.querySelector(selector); } catch(e) { header=document.querySelector('.l-header'); }
+      adminBar=document.getElementById('wpadminbar');
+    }
     const reverse=o.maskDirection==='shrink';
     const withColour=Boolean(o.colorInterleave);
     const delay=clamp(Number(o.colorHandoff)||0,0,65)/100;
@@ -153,9 +159,23 @@
       mask(t);
     }
     function scrollPosition(){
+      let nextTop=0;
+      for(const element of [header,adminBar]){
+        if(!element)continue;
+        const style=getComputedStyle(element);
+        if(style.position!=='fixed'&&style.position!=='sticky')continue;
+        if(style.visibility==='hidden')continue;
+        const rect=element.getBoundingClientRect();
+        if(rect.height&&rect.top<window.innerHeight/2)nextTop=Math.max(nextTop,rect.bottom);
+      }
+      nextTop=Math.ceil(nextTop);
+      if(nextTop!==pinTop){
+        pinTop=nextTop;
+        root.style.setProperty('--dm-mask-pin-top',pinTop+'px');
+      }
       const rect=root.getBoundingClientRect();
       const available=Math.max(1,rect.height-stage.getBoundingClientRect().height);
-      return clamp(-rect.top/available,0,1)*(count-1);
+      return clamp((pinTop-rect.top)/available,0,1)*(count-1);
     }
     function onScroll(){
       const now=performance.now();
