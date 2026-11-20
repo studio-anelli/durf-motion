@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.12
+- Reduce offscreen filmstrip and Dot Mask animation work. Smooth filmstrip scroll input and remove the Dot Mask jump on scroll reversal.
+
 ## 1.11.11
 - Let wide photos extend past the gallery viewport at their natural width while keeping the shared photo height.
 

@@ -26,11 +26,14 @@
     const response=clamp((100-(Number(opt.smoothness)||72))/100,0.04,0.55);
     const speed=clamp(Number(opt.autoplaySpeed)||25,3,160);
     const hoverPause=!!opt.pauseHover;
-    const useContinuous=looping||autoplay||scrollDriven;
     let period=0,base=0,target=0,current=0,frame=0,lastTick=0;
-    let impulse=0,dragging=false,dragOrigin=0,dragScroll=0,hold=false;
+    let pendingScroll=0,dragging=false,dragOrigin=0,dragScroll=0,hold=false;
     let scrollY=window.scrollY,scrollTime=performance.now();
     let suppressClick=false;
+    let visible=inViewport();
+    if(typeof IntersectionObserver==='function'){
+      new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;}).observe(root);
+    }
     const children=()=>Array.from(list.children);
     const clones=[];
     if(looping){
@@ -85,14 +88,24 @@
     function tick(now){
       const dt=lastTick?Math.min(0.05,(now-lastTick)/1000):0;
       lastTick=now;
-      if(document.hidden){frame=requestAnimationFrame(tick);return;}
+      const onscreen=typeof IntersectionObserver==='function'?visible:inViewport();
+      if(document.hidden||!onscreen){
+        pendingScroll=0;
+        if(autoplay||scrollDriven||looping)frame=requestAnimationFrame(tick);
+        else{current=target=normalScroll();frame=0;lastTick=0;}
+        return;
+      }
       // Scroll impulse is transient. The base velocity survives and resumes.
-      const active=inViewport()&&!dragging;
+      const active=!dragging;
       if(active&&autoplay&&(!hoverPause||!hold))target+=speed*dt;
-      if(active&&scrollDriven)target+=impulse*dt;
-      impulse*=Math.exp(-dt*5.0);
+      if(active&&scrollDriven){
+        const step=pendingScroll*(1-Math.exp(-dt*9));
+        target+=step;
+        pendingScroll-=step;
+        if(Math.abs(pendingScroll)<.05)pendingScroll=0;
+      }
       if(!looping)target=clamp(target,0,Math.max(0,travel()));
-      if(!dragging){
+      if(!dragging&&current!==target){
         const k=1-Math.pow(1-response,Math.max(0.01,dt*60));
         current+=(target-current)*k;
         if(Math.abs(current-target)<0.02)current=target;
@@ -105,14 +118,13 @@
     function onPageScroll(){
       const next=window.scrollY,now=performance.now(),dy=next-scrollY,dt=Math.max(8,now-scrollTime);
       scrollY=next;scrollTime=now;
-      if(!scrollDriven||!dy||!inViewport())return;
+      if(!dy||dragging||!(typeof IntersectionObserver==='function'?visible:inViewport()))return;
       const velocity=Math.abs(dy)/dt*1000;
-      const acceleration=mode==='dynamic'?(1+Math.min(2,velocity/1500)):1;
-      // Translate page travel into a short-lived velocity impulse.
-      impulse=clamp(impulse+dy/dt*1000*strength*acceleration*.35,-1100,1100);
+      const acceleration=mode==='dynamic'?1+Math.min(.6,velocity/2500):1;
+      pendingScroll=clamp(pendingScroll+dy*strength*acceleration*2.4,-220,220);
       ensure();
     }
-    window.addEventListener('scroll',onPageScroll,{passive:true});
+    if(scrollDriven)window.addEventListener('scroll',onPageScroll,{passive:true});
     if(hoverPause){root.addEventListener('mouseenter',()=>hold=true);root.addEventListener('mouseleave',()=>hold=false);}
     if(dragAllowed){
       track.addEventListener('pointerdown',e=>{
