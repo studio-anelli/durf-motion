@@ -1,13 +1,77 @@
 (function($){'use strict';$(function(){var list=$('#dm-slider-images'),field=$('#dm-slider-ids');if(!list.length)return;
- var ids=(field.val()||'').split(',').map(Number).filter(Boolean);
- function save(){field.val(ids.join(','));}
- function card(id,attachment){var u=attachment&&attachment.url||'';if(attachment&&attachment.sizes)u=(attachment.sizes.thumbnail||attachment.sizes.medium||attachment).url||u;
-  var el=$('<div class="dm-slider-image"/>').attr('data-id',id);el.append($('<img alt=""/>').attr('src',u));
-  var btns=$('<div class="dm-slider-image-actions"/>');
-  [['↑','up','Move left'],['↓','down','Move right'],['×','remove','Remove image']].forEach(function(parts){btns.append($('<button type="button" class="button button-small"/>').text(parts[0]).attr('data-action',parts[1]).attr('aria-label',parts[2]));});el.append(btns);list.append(el);
+ function saveOrder() {
+   field.val(list.children('.dm-slider-image').map(function () {
+     return this.getAttribute('data-id');
+   }).get().join(','));
  }
- function render(){list.empty();ids.forEach(function(id){var el=$('<div class="dm-slider-image"/>').attr('data-id',id).append('<div style="height:100px">Loading…</div>');list.append(el);var a=wp.media.attachment(id);a.fetch().done(function(){var u=a.get('sizes')&&a.get('sizes').thumbnail?a.get('sizes').thumbnail.url:a.get('url');el.empty();el.append($('<img alt=""/>').attr('src',u||''));var btns=$('<div class="dm-slider-image-actions"/>');[['↑','up','Move left'],['↓','down','Move right'],['×','remove','Remove image']].forEach(function(parts){btns.append($('<button type="button" class="button button-small"/>').text(parts[0]).attr('data-action',parts[1]).attr('aria-label',parts[2]));});el.append(btns);});});save();}
- $('#dm-slider-add').on('click',function(){var frame=wp.media({title:'Choose slider images',button:{text:'Use these images'},library:{type:'image'},multiple:true});frame.on('select',function(){frame.state().get('selection').each(function(m){if(ids.indexOf(m.id)===-1)ids.push(m.id);});render();});frame.open();});
+
+ function addCard(id, attachment) {
+   if (list.children('[data-id="' + id + '"]').length) return;
+
+   var card = $('<div class="dm-slider-image"/>').attr('data-id', id);
+   var image = $('<img alt="" draggable="false"/>').appendTo(card);
+   var buttons = $('<div class="dm-slider-image-actions"/>').appendTo(card);
+   [['←', 'up', 'Move earlier'], ['→', 'down', 'Move later'], ['×', 'remove', 'Remove image']].forEach(function (parts) {
+     $('<button type="button" class="button button-small"/>').text(parts[0])
+       .attr({'data-action': parts[1], 'aria-label': parts[2]}).appendTo(buttons);
+   });
+   list.append(card);
+
+   function setThumbnail(model) {
+     var sizes = model.get('sizes') || {};
+     var thumbnail = sizes.thumbnail || sizes.medium;
+     var url = thumbnail ? thumbnail.url : model.get('url');
+     if (url) image.attr('src', url);
+   }
+
+   if (attachment) {
+     setThumbnail(attachment);
+   } else {
+     var model = wp.media.attachment(id);
+     if (model.get('url')) setThumbnail(model);
+     else model.fetch().done(function () { setThumbnail(model); });
+   }
+ }
+
+ (field.val() || '').split(',').map(Number).filter(Boolean).forEach(function (id) {
+   addCard(id);
+ });
+
+ list.sortable({
+   items: '> .dm-slider-image',
+   cancel: 'button',
+   placeholder: 'dm-slider-image-placeholder',
+   forcePlaceholderSize: true,
+   tolerance: 'pointer',
+   update: saveOrder
+ });
+
+ $('#dm-slider-add').on('click', function () {
+   var frame = wp.media({title:'Choose slider images', button:{text:'Use these images'}, library:{type:'image'}, multiple:true});
+   frame.on('select', function () {
+     frame.state().get('selection').each(function (model) {
+       addCard(model.id, model);
+     });
+     saveOrder();
+   });
+   frame.open();
+ });
+
+ list.on('click', 'button[data-action]', function () {
+   var card = $(this).closest('.dm-slider-image');
+   var action = $(this).data('action');
+   if (action === 'remove') {
+     card.remove();
+   } else {
+     var earlier = action === 'up';
+     var neighbor = earlier ? card.prev() : card.next();
+     if (!neighbor.length) return;
+     if (earlier) neighbor.insertAfter(card);
+     else neighbor.insertBefore(card);
+   }
+   saveOrder();
+ });
+
  function updateSliderSettings(){
    var mask=$('select[name="dm_slider[layout]"]').val()==='dot-mask';
    $('.dm-slider-regular').toggle(!mask);
@@ -28,5 +92,4 @@
  }
  $(document).on('change','select[name="dm_slider[layout]"],select[name="dm_slider[mask_playback]"],input[name="dm_slider[mask_velocity]"],select[name="dm_slider[mask_interleave]"]',updateSliderSettings);
  updateSliderSettings();
- list.on('click','button',function(){var card=$(this).closest('[data-id]'),idx=ids.indexOf(Number(card.attr('data-id'))),action=$(this).data('action');if(idx<0)return;if(action==='remove')ids.splice(idx,1);if(action==='up'&&idx>0){var t=ids[idx-1];ids[idx-1]=ids[idx];ids[idx]=t;}if(action==='down'&&idx<ids.length-1){var v=ids[idx+1];ids[idx+1]=ids[idx];ids[idx]=v;}render();});render();
  });})(jQuery);
