@@ -141,20 +141,22 @@ final class DURF_Motion_Sliders {
         if($s['layout']==='dot-mask')return self::mask_shortcode($id,$s);
         wp_enqueue_style('dm-slider');wp_enqueue_script('dm-slider');
         $html='';$found=0;
+        $natural_gallery=$s['layout']==='gallery'&&$s['direction']==='horizontal'&&$s['ratio']==='auto';
         foreach($s['ids'] as $attachment_id){
             $src=wp_get_attachment_image_src($attachment_id,'large');if(!$src)continue;
             $alt=get_post_meta($attachment_id,'_wp_attachment_image_alt',true);
             $caption=wp_get_attachment_caption($attachment_id);
             $image=wp_get_attachment_image($attachment_id,'large',false,array('loading'=>'lazy','decoding'=>'async','alt'=>$alt,'sizes'=>'(max-width:767px) 94vw, (max-width:1100px) 75vw, 70vw'));
             if(!$image)continue;
-            $html.='<li class="splide__slide"><figure class="dm-slide-frame">'.$image;
+            $slide_style=$natural_gallery?' style="--dm-slider-photo-ratio:'.esc_attr(wp_json_encode((int)$src[1]/max(1,(int)$src[2]))).'"':'';
+            $html.='<li class="splide__slide"'.$slide_style.'><figure class="dm-slide-frame">'.$image;
             if(!empty($s['captions'])&&$caption)$html.='<figcaption>'.esc_html($caption).'</figcaption>';
             $html.='</figure></li>';
             $found++;
         }
         if(!$found)return '';
-        $params=array('layout'=>$s['layout'],'gap'=>(int)$s['gap'],'peek'=>(int)$s['peek'],'speed'=>(int)$s['speed'],'loop'=>!empty($s['loop']),'autoplay'=>!empty($s['autoplay']),'autoplaySpeed'=>(int)$s['autoplay_speed'],'pauseHover'=>!empty($s['pause_hover']),'allowDrag'=>!empty($s['allow_drag']),'direction'=>$s['direction'],'scrollResponse'=>$s['scroll_response'],'scrollStrength'=>(int)$s['scroll_strength'],'smoothness'=>(int)$s['smoothness'],'imageDrift'=>$s['fit']==='cover'&&!empty($s['image_drift']));
-        $classes='dm-slider dm-slider--'.$s['layout'].' dm-slider--'.$s['direction'];
+        $params=array('layout'=>$s['layout'],'gap'=>(int)$s['gap'],'peek'=>(int)$s['peek'],'speed'=>(int)$s['speed'],'loop'=>!empty($s['loop']),'autoplay'=>!empty($s['autoplay']),'autoplaySpeed'=>(int)$s['autoplay_speed'],'pauseHover'=>!empty($s['pause_hover']),'allowDrag'=>!empty($s['allow_drag']),'direction'=>$s['direction'],'scrollResponse'=>$s['scroll_response'],'scrollStrength'=>(int)$s['scroll_strength'],'smoothness'=>(int)$s['smoothness'],'imageDrift'=>!$natural_gallery&&$s['fit']==='cover'&&!empty($s['image_drift']));
+        $classes='dm-slider dm-slider--'.$s['layout'].' dm-slider--'.$s['direction'].($natural_gallery?' dm-slider--natural-gallery':'');
         $styles='--dm-slider-container-radius:'.(int)$s['container_radius'].'px;--dm-slider-image-radius:'.(int)$s['image_radius'].'px;--dm-slider-gap:'.$s['gap'].'px;--dm-slider-ratio:'.($s['ratio']==='auto'?'auto':$s['ratio']).';--dm-slider-fit:'.$s['fit'].';--dm-slider-position:'.$s['position'].';--dm-slider-peek:'.$s['peek'].'%;--dm-slider-viewport-height:'.$s['viewport_height'].'svh;--dm-slider-vertical-slide-height:'.$s['vertical_slide_height'].'svh;';
         return '<div class="'.esc_attr($classes).' splide" aria-label="'.esc_attr(get_the_title($id)).'" data-dm-slider="'.esc_attr(wp_json_encode($params)).'" style="'.esc_attr($styles).'">'
           .'<div class="splide__track"><ul class="splide__list">'.$html.'</ul></div>'
