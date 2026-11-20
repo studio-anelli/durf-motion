@@ -4,8 +4,8 @@
 .dm-mask-slider .dm-mask-stage{position:relative;width:100%;height:var(--dm-mask-height);overflow:hidden;background:var(--dm-mask-background);isolation:isolate}
 .dm-mask-slider .dm-mask-art{display:block;width:100%;height:100%;overflow:hidden}
 .dm-mask-slider .dm-mask-source{display:none}
-.dm-mask-slider.dm-mask--scroll{height:var(--dm-mask-scroll-height,250svh)}
-.dm-mask-slider.dm-mask--scroll .dm-mask-stage{position:sticky;top:0}
+.dm-mask-slider.dm-mask--scroll{--dm-mask-visible-height:min(var(--dm-mask-height),calc(100svh - var(--dm-mask-pin-top,0px)));height:calc(var(--dm-mask-scroll-height,250svh) - var(--dm-mask-height) + var(--dm-mask-visible-height))}
+.dm-mask-slider.dm-mask--scroll .dm-mask-stage{position:sticky;top:var(--dm-mask-pin-top,0px);height:var(--dm-mask-visible-height)}
 .dm-mask-slider .dm-mask-art image{pointer-events:none}
 @media(prefers-reduced-motion:reduce){.dm-mask-slider .dm-mask-art{transition:none!important}}
 
