@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.10
+- Apply the photo corner radius to the visible photo in natural horizontal galleries, including wide photos centered within their frames.
+
 ## 1.11.9
 - Show slider controls based on composition, direction, image sizing, playback and motion settings. Remove the unused snap duration control.
 
