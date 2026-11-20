@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.7
+- Show original-proportion photos at a shared height in horizontal galleries. Portraits take less horizontal space and all photos remain uncropped.
+
 ## 1.11.6
 - Fix saving Image fit and Focal point across slider layouts. Contain keeps the full image visible by bypassing cinematic zoom.
 
