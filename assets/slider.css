@@ -44,12 +44,10 @@
   --dm-slider-photo-height:var(--dm-slider-custom-photo-height,var(--dm-slider-auto-photo-height));
 }
 .dm-slider--natural-gallery.dm-slider--gallery.dm-slider--horizontal .splide__slide{
-  flex-basis:min(100%,calc(var(--dm-slider-photo-height) * var(--dm-slider-photo-ratio,1.5)));
+  flex-basis:calc(var(--dm-slider-photo-height) * var(--dm-slider-photo-ratio,1.5));
 }
 .dm-slider--natural-gallery .dm-slide-frame img{
-  --dm-slider-rendered-height:min(var(--dm-slider-photo-height),calc(100cqw / var(--dm-slider-photo-ratio,1.5)));
-  height:var(--dm-slider-rendered-height);
-  margin-block:calc((var(--dm-slider-photo-height) - var(--dm-slider-rendered-height)) / 2);
+  height:var(--dm-slider-photo-height);
   border-radius:var(--dm-slider-image-radius,0px);
   object-fit:contain;
 }
