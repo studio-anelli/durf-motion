@@ -72,8 +72,9 @@
     function colour(){return o.accentColor||getSectionColour()}
     let fullRadius=1200;
     let pairFrom=-1,pairTo=-1,lastPhotoRadius=-1,lastColourRadius=-1;
-    let target=0,current=0,velocity=0,prevDirection=0,prevScroll=window.scrollY,prevScrollTime=performance.now();
+    let target=0,current=0,velocity=0,prevScroll=window.scrollY,prevScrollTime=performance.now();
     let autoTime=0,paused=false,lastFrame=performance.now(),raf=0;
+    let visible=true, wasVisible=true;
     let autoMomentum=0,autoLastY=window.scrollY,autoLastTime=performance.now();
 
     function setRadii(nodes,r,key){
@@ -182,13 +183,6 @@
       const dy=window.scrollY-prevScroll;
       velocity=clamp(dy/Math.max(16,now-prevScrollTime),-3,3);
       prevScroll=window.scrollY;prevScrollTime=now;
-      target=scrollPosition();
-      const direction=Math.sign(dy);
-      if(direction&&prevDirection&&direction!==prevDirection){
-        // Don't keep moving in the previous direction after an explicit reversal.
-        current=target;
-      }
-      if(direction)prevDirection=direction;
     }
     function onAutoScroll(){
       const now=performance.now();
@@ -199,8 +193,16 @@
     }
     function frame(now){
       const dt=Math.min(64,Math.max(0,now-lastFrame));lastFrame=now;
+      raf=requestAnimationFrame(frame);
+      if(document.hidden||!visible){
+        wasVisible=false;
+        velocity=0;
+        autoMomentum=0;
+        return;
+      }
       if(scrollMode){
         target=scrollPosition();
+        if(!wasVisible)current=target;
         const alpha=smoothing<=0?1:1-Math.exp(-dt/(20+smoothing*540));
         current+=(target-current)*alpha;
         if(Math.abs(target-current)<.0001)current=target;
@@ -217,7 +219,7 @@
         // autonomous completion can push the reveal against scroll direction.
         render(display,false);
       }else{
-        if(!paused&&!reduced){
+        if(!paused&&!reduced&&wasVisible){
           // Normal speed 1x, briefly modulated by signed page scroll velocity.
           // Down speeds forward, up slows or reverses, then decays to 1x.
           const factor=clamp(1+autoMomentum*autoScrollStrength,-1.5,3.5);
@@ -229,7 +231,7 @@
         const within=autoTime%cycle;
         render(index+clamp((within-interval)/duration,0,1),true);
       }
-      raf=requestAnimationFrame(frame);
+      wasVisible=true;
     }
     resize();
     if(scrollMode){target=current=scrollPosition();window.addEventListener('scroll',onScroll,{passive:true})}
@@ -240,7 +242,9 @@
       stage.addEventListener('pointerenter',()=>{paused=true});
       stage.addEventListener('pointerleave',()=>{paused=false});
     }
-    document.addEventListener('visibilitychange',()=>{if(!scrollMode)paused=document.hidden});
+    if(typeof IntersectionObserver==='function'){
+      new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;}).observe(root);
+    }
     raf=requestAnimationFrame(frame);
     window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
   }
