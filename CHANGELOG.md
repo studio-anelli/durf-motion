@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.2
+- Fix collapsing horizontal slides in Gallery and Editorial. Gallery retains its responsive columns, and Editorial uses the configured next-image peek on desktop and mobile.
+
 ## 1.11.1
 - Move Adaptive Header settings out of Colours into a dedicated Header tab.
 - Add selectable header easing: Follow section background (default), Quick, Soft, Cinematic. Follow reads live colour-flow blends with no extra background delay and a short foreground contrast transition.
