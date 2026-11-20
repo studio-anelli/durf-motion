@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.5
+- Pin scroll-driven Dot Mask sliders below the fixed header and WordPress toolbar, keeping the frame within the visible viewport.
+
 ## 1.11.4
 - Add a viewport height setting for scroll-driven Dot Mask sliders. Both playback modes use their chosen height on mobile and desktop.
 
