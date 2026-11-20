@@ -81,7 +81,7 @@
    ['mask_interval','mask_duration','mask_height','pause_hover','mask_auto_scroll_strength'].forEach(function(key){
      $('.dm-slider-mask-settings [name="dm_slider['+key+']"]').closest('label').toggle(!mask||auto);
    });
-   ['mask_scroll_distance','mask_velocity','mask_smoothing'].forEach(function(key){
+   ['mask_scroll_height','mask_scroll_distance','mask_velocity','mask_smoothing'].forEach(function(key){
      $('.dm-slider-mask-settings [name="dm_slider['+key+']"]').closest('label').toggle(!auto);
    });
    $('.dm-slider-mask-settings [name="dm_slider[mask_velocity_strength]"]').closest('label').toggle(!auto&&velocity);
