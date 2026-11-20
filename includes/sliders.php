@@ -40,15 +40,15 @@ final class DURF_Motion_Sliders {
         $screen=function_exists('get_current_screen')?get_current_screen():null;
         if (!$screen || $screen->post_type!==self::TYPE || !in_array($hook,array('post.php','post-new.php'),true)) return;
         wp_enqueue_media();
-        wp_enqueue_script('dm-slider-admin',plugins_url('../assets/slider-admin.js', __FILE__),array('jquery'),DURF_Motion::VERSION,true);
+        wp_enqueue_script('dm-slider-admin',plugins_url('../assets/slider-admin.js', __FILE__),array('jquery-ui-sortable'),DURF_Motion::VERSION,true);
         // plugin_dir_url(__FILE__) would resolve to includes/, so use its parent.
-        wp_add_inline_style('wp-admin', '.dm-slider-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px;margin:15px 0}.dm-slider-image{padding:8px;border:1px solid #ddd;background:#fff}.dm-slider-image img{width:100%;height:100px;object-fit:cover}.dm-slider-image-actions{display:flex;gap:5px;justify-content:center}.dm-slider-controls{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:15px}.dm-slider-controls label{display:grid;gap:6px}.dm-slider-controls input,.dm-slider-controls select{max-width:100%}@media(max-width:800px){.dm-slider-controls{grid-template-columns:repeat(2,minmax(120px,1fr))}}');
+        wp_add_inline_style('wp-admin', '.dm-slider-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px;margin:15px 0}.dm-slider-image{float:left;cursor:grab;padding:8px;border:1px solid #ddd;background:#fff}.dm-slider-image.ui-sortable-helper{cursor:grabbing}.dm-slider-image-placeholder{border:1px dashed #8c8f94;background:#f0f0f1}.dm-slider-image img{display:block;width:100%;height:100px;object-fit:cover}.dm-slider-image-actions{display:flex;gap:5px;justify-content:center}.dm-slider-controls{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:15px}.dm-slider-controls label{display:grid;gap:6px}.dm-slider-controls input,.dm-slider-controls select{max-width:100%}@media(max-width:800px){.dm-slider-controls{grid-template-columns:repeat(2,minmax(120px,1fr))}}');
     }
     public static function editor($post) {
         $s=self::settings($post->ID);
         wp_nonce_field('dm_slider_save','dm_slider_nonce');
         echo '<p><strong>WPBakery shortcode:</strong> <code>[durf_slider id="' . (int)$post->ID . '"]</code> <small>(Save the slider to activate it.)</small></p>';
-        echo '<p><button type="button" id="dm-slider-add" class="button button-primary">Choose / add photos</button> <span>Use arrows below each thumbnail to reorder images.</span></p>';
+        echo '<p><button type="button" id="dm-slider-add" class="button button-primary">Choose / add photos</button> <span>Drag photos to reorder them, or use the arrows below each photo.</span></p>';
         echo '<div id="dm-slider-images" class="dm-slider-images" aria-live="polite"></div>';
         echo '<input type="hidden" id="dm-slider-ids" name="dm_slider[ids]" value="' . esc_attr(implode(',',array_map('absint',$s['ids']))) . '">';
         echo '<h3>Appearance</h3><div class="dm-slider-controls">';
