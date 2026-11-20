@@ -72,29 +72,54 @@
    saveOrder();
  });
 
- function updateSliderSettings(){
-   var mask=$('select[name="dm_slider[layout]"]').val()==='dot-mask';
+ function setting(key) {
+   return $('[name="dm_slider[' + key + ']"]');
+ }
+
+ function updateSliderSettings() {
+   var layout = setting('layout').val();
+   var mask = layout === 'dot-mask';
+   var horizontal = setting('direction').val() === 'horizontal';
+   var original = setting('ratio').val() === 'auto';
+   var naturalGallery = horizontal && layout === 'gallery' && original;
+   var automatic = setting('mask_playback').val() === 'auto';
+   var autoplay = setting('autoplay').is(':checked');
+   var fit = setting('fit').val();
+   var colourInterleave = setting('mask_interleave').val() === 'between';
+
    $('.dm-slider-regular').toggle(!mask);
-   var horizontal=$('select[name="dm_slider[direction]"]').val()==='horizontal';
-   var naturalGallery=$('select[name="dm_slider[layout]"]').val()==='gallery' &&
-     $('select[name="dm_slider[ratio]"]').val()==='auto';
-   $('[name="dm_slider[natural_gallery_height]"]').closest('label').toggle(horizontal&&naturalGallery);
-   $('[name="dm_slider[viewport_height]"],[name="dm_slider[vertical_slide_height]"]').closest('label').toggle(!horizontal);
    $('.dm-slider-mask-settings').toggle(mask);
-   var auto=$('select[name="dm_slider[mask_playback]"]').val()==='auto';
-   var velocity=$('input[name="dm_slider[mask_velocity]"]').is(':checked');
-   ['mask_interval','mask_duration','mask_height','pause_hover','mask_auto_scroll_strength'].forEach(function(key){
-     $('.dm-slider-mask-settings [name="dm_slider['+key+']"]').closest('label').toggle(!mask||auto);
-   });
-   ['mask_scroll_height','mask_scroll_distance','mask_velocity','mask_smoothing'].forEach(function(key){
-     $('.dm-slider-mask-settings [name="dm_slider['+key+']"]').closest('label').toggle(!auto);
-   });
-   $('.dm-slider-mask-settings [name="dm_slider[mask_velocity_strength]"]').closest('label').toggle(!auto&&velocity);
-   var interleave=$('select[name="dm_slider[mask_interleave]"]').val()==='between';
-   ['mask_color','mask_color_handoff'].forEach(function(key){
-     $('.dm-slider-mask-settings [name="dm_slider['+key+']"]').closest('label').toggle(interleave);
+
+   var visible = {
+     fit: !naturalGallery,
+     position: mask || !horizontal || !original,
+     pause_hover: mask ? automatic : autoplay,
+     ratio: horizontal,
+     peek: horizontal && layout === 'editorial',
+     viewport_height: !horizontal,
+     vertical_slide_height: !horizontal,
+     natural_gallery_height: naturalGallery,
+     scroll_strength: setting('scroll_response').val() !== 'off',
+     autoplay_speed: autoplay,
+     image_drift: !naturalGallery && fit === 'cover',
+     mask_interval: automatic,
+     mask_duration: automatic,
+     mask_height: automatic,
+     mask_auto_scroll_strength: automatic,
+     mask_scroll_height: !automatic,
+     mask_scroll_distance: !automatic,
+     mask_velocity: !automatic,
+     mask_smoothing: !automatic,
+     mask_velocity_strength: !automatic && setting('mask_velocity').is(':checked'),
+     mask_spacing: setting('mask_grid').val() !== '1',
+     mask_color: colourInterleave,
+     mask_color_handoff: colourInterleave
+   };
+   Object.keys(visible).forEach(function (key) {
+     setting(key).closest('label').toggle(visible[key]);
    });
  }
- $(document).on('change','select[name="dm_slider[layout]"],select[name="dm_slider[direction]"],select[name="dm_slider[ratio]"],select[name="dm_slider[mask_playback]"],input[name="dm_slider[mask_velocity]"],select[name="dm_slider[mask_interleave]"]',updateSliderSettings);
+
+ list.closest('#post').on('change', 'select[name^="dm_slider["], input[type="checkbox"][name^="dm_slider["]', updateSliderSettings);
  updateSliderSettings();
  });})(jQuery);
