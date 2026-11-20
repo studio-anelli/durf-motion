@@ -26,7 +26,7 @@ final class DURF_Motion_Sliders {
         ));
     }
     public static function defaults() {
-        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1,'mask_grid'=>'6','mask_playback'=>'scroll','mask_duration'=>1100,'mask_interval'=>3500,'mask_scroll_distance'=>100,'mask_auto_scroll_strength'=>0,'mask_velocity'=>0,'mask_velocity_strength'=>35,'mask_height'=>75,'mask_easing'=>'editorial','mask_smoothing'=>45,'mask_spacing'=>85,'container_radius'=>0,'image_radius'=>0,'mask_interleave'=>'off','mask_color'=>'section','mask_color_handoff'=>20,'mask_direction'=>'grow');
+        return array('ids'=>array(), 'layout'=>'editorial','ratio'=>'16/9','fit'=>'cover','position'=>'50% 50%','gap'=>18,'peek'=>16,'speed'=>650,'loop'=>0,'autoplay'=>0,'arrows'=>0,'captions'=>0,'direction'=>'horizontal','scroll_response'=>'off','scroll_strength'=>60,'smoothness'=>72,'viewport_height'=>76,'vertical_slide_height'=>64,'image_drift'=>1,'autoplay_speed'=>25,'pause_hover'=>0,'allow_drag'=>1,'mask_grid'=>'6','mask_playback'=>'scroll','mask_duration'=>1100,'mask_interval'=>3500,'mask_scroll_distance'=>100,'mask_auto_scroll_strength'=>0,'mask_velocity'=>0,'mask_velocity_strength'=>35,'mask_height'=>75,'mask_scroll_height'=>100,'mask_easing'=>'editorial','mask_smoothing'=>45,'mask_spacing'=>85,'container_radius'=>0,'image_radius'=>0,'mask_interleave'=>'off','mask_color'=>'section','mask_color_handoff'=>20,'mask_direction'=>'grow');
     }
     public static function settings($id) {
         $value=get_post_meta($id,self::META,true);
@@ -84,7 +84,8 @@ final class DURF_Motion_Sliders {
         self::integer('mask_interval','Autoplay hold per slide (ms)',1000,15000,$s);
         self::integer('mask_auto_scroll_strength','Automatic: page scroll influence (0–100%)',0,100,$s);
         self::integer('mask_scroll_distance','Scroll distance per slide (vh)',40,250,$s);
-        self::integer('mask_height','Automatic slider height (vh)',35,100,$s);
+        self::integer('mask_height','Slider height (vh)',35,100,$s);
+        self::integer('mask_scroll_height','Slider height (vh)',35,100,$s);
         self::select('mask_easing','Growth easing',array('linear'=>'Linear','soft'=>'Soft','editorial'=>'Editorial (smoothest)'),$s);
         self::select('mask_direction','Circle transition',array('grow'=>'Small to big (reveal)','shrink'=>'Big to small (uncover)'),$s);
         self::integer('mask_smoothing','Scroll smoothing (0–95)',0,95,$s);
@@ -118,7 +119,7 @@ final class DURF_Motion_Sliders {
         $ids=array_values(array_unique(array_filter(array_map('absint',$ids),function($id){return $id>0 && wp_attachment_is_image($id);})));$ids=array_slice($ids,0,80);
         $d['ids']=$ids;
         foreach(array('layout'=>array('editorial','gallery','dot-mask'),'direction'=>array('horizontal','vertical'),'scroll_response'=>array('off','gentle','dynamic'),'ratio'=>array('16/9','4/3','1/1','3/2','auto'),'fit'=>array('cover','contain'),'position'=>array('50% 50%','50% 25%','50% 75%','25% 50%','75% 50%')) as $key=>$allowed){$v=$input[$key]??$d[$key];$d[$key]=in_array($v,$allowed,true)?$v:$d[$key];}
-        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160),'mask_duration'=>array(250,6000),'mask_interval'=>array(1000,15000),'mask_scroll_distance'=>array(40,250),'mask_auto_scroll_strength'=>array(0,100),'mask_velocity_strength'=>array(0,100),'mask_height'=>array(35,100),'mask_smoothing'=>array(0,95),'mask_spacing'=>array(30,100),'container_radius'=>array(0,200),'image_radius'=>array(0,200),'mask_color_handoff'=>array(0,65)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
+        foreach(array('gap'=>array(0,60),'peek'=>array(5,35),'speed'=>array(200,1800),'scroll_strength'=>array(0,150),'smoothness'=>array(0,95),'viewport_height'=>array(35,100),'vertical_slide_height'=>array(25,100),'autoplay_speed'=>array(3,160),'mask_duration'=>array(250,6000),'mask_interval'=>array(1000,15000),'mask_scroll_distance'=>array(40,250),'mask_auto_scroll_strength'=>array(0,100),'mask_velocity_strength'=>array(0,100),'mask_height'=>array(35,100),'mask_scroll_height'=>array(35,100),'mask_smoothing'=>array(0,95),'mask_spacing'=>array(30,100),'container_radius'=>array(0,200),'image_radius'=>array(0,200),'mask_color_handoff'=>array(0,65)) as $key=>$bounds){$d[$key]=max($bounds[0],min($bounds[1],absint($input[$key]??$d[$key])));}
         foreach(array('image_drift','captions','loop','autoplay','pause_hover','allow_drag','mask_velocity') as $key)$d[$key]=!empty($input[$key])?1:0;
         $d['mask_grid']=in_array((string)($input['mask_grid']??$d['mask_grid']),array('1','4','6','8','12'),true)?(string)$input['mask_grid']:'6';
         $d['mask_playback']=in_array(($input['mask_playback']??''),array('scroll','auto'),true)?$input['mask_playback']:'scroll';
@@ -202,8 +203,9 @@ final class DURF_Motion_Sliders {
             $source_html.='<span class="dm-mask-source" data-type="'.esc_attr($type).'" data-src="'.esc_url($source['src']??'').'" data-color="'.esc_attr($source['color']??'').'" data-alt="'.esc_attr($source['alt']??'').'"></span>';
         }
         $classes='dm-mask-slider '.($s['mask_playback']==='scroll'?'dm-mask--scroll':'dm-mask--auto');
-        $scroll_height=100+(count($sources)-1)*(int)$s['mask_scroll_distance'];
-        $style='--dm-mask-height:'.(int)$s['mask_height'].'svh;--dm-mask-scroll-height:'.$scroll_height.'svh;--dm-mask-container-radius:'.(int)$s['container_radius'].'px;--dm-mask-background:'.((int)$s['image_radius']>0?'transparent':'#25231f').';';
+        $stage_height=(int)$s[$s['mask_playback']==='scroll'?'mask_scroll_height':'mask_height'];
+        $scroll_height=$stage_height+(count($sources)-1)*(int)$s['mask_scroll_distance'];
+        $style='--dm-mask-height:'.$stage_height.'svh;--dm-mask-scroll-height:'.$scroll_height.'svh;--dm-mask-container-radius:'.(int)$s['container_radius'].'px;--dm-mask-background:'.((int)$s['image_radius']>0?'transparent':'#25231f').';';
         $first=$sources[0];
         return '<div class="'.esc_attr($classes).'" data-dm-mask="'.esc_attr(wp_json_encode($opts)).'" style="'.esc_attr($style).'">'
           .$source_html.'<div class="dm-mask-stage"><svg class="dm-mask-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-label="'.esc_attr(get_the_title($id)).'" role="img">'
