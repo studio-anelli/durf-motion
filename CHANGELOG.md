@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.6
+- Fix saving Image fit and Focal point across slider layouts. Contain keeps the full image visible by bypassing cinematic zoom.
+
 ## 1.11.5
 - Pin scroll-driven Dot Mask sliders below the fixed header and WordPress toolbar, keeping the frame within the visible viewport.
 
