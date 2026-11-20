@@ -154,7 +154,7 @@
     }
     function scrollPosition(){
       const rect=root.getBoundingClientRect();
-      const available=Math.max(1,rect.height-window.innerHeight);
+      const available=Math.max(1,rect.height-stage.getBoundingClientRect().height);
       return clamp(-rect.top/available,0,1)*(count-1);
     }
     function onScroll(){
