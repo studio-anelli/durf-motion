@@ -75,6 +75,11 @@
  function updateSliderSettings(){
    var mask=$('select[name="dm_slider[layout]"]').val()==='dot-mask';
    $('.dm-slider-regular').toggle(!mask);
+   var horizontal=$('select[name="dm_slider[direction]"]').val()==='horizontal';
+   var naturalGallery=$('select[name="dm_slider[layout]"]').val()==='gallery' &&
+     $('select[name="dm_slider[ratio]"]').val()==='auto';
+   $('[name="dm_slider[natural_gallery_height]"]').closest('label').toggle(horizontal&&naturalGallery);
+   $('[name="dm_slider[viewport_height]"],[name="dm_slider[vertical_slide_height]"]').closest('label').toggle(!horizontal);
    $('.dm-slider-mask-settings').toggle(mask);
    var auto=$('select[name="dm_slider[mask_playback]"]').val()==='auto';
    var velocity=$('input[name="dm_slider[mask_velocity]"]').is(':checked');
@@ -90,6 +95,6 @@
      $('.dm-slider-mask-settings [name="dm_slider['+key+']"]').closest('label').toggle(interleave);
    });
  }
- $(document).on('change','select[name="dm_slider[layout]"],select[name="dm_slider[mask_playback]"],input[name="dm_slider[mask_velocity]"],select[name="dm_slider[mask_interleave]"]',updateSliderSettings);
+ $(document).on('change','select[name="dm_slider[layout]"],select[name="dm_slider[direction]"],select[name="dm_slider[ratio]"],select[name="dm_slider[mask_playback]"],input[name="dm_slider[mask_velocity]"],select[name="dm_slider[mask_interleave]"]',updateSliderSettings);
  updateSliderSettings();
  });})(jQuery);
