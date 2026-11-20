@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.3
+- Add drag-and-drop photo ordering in the slide editor and keep thumbnails mounted when using the reorder arrows.
+
 ## 1.11.2
 - Fix collapsing horizontal slides in Gallery and Editorial. Gallery retains its responsive columns, and Editorial uses the configured next-image peek on desktop and mobile.
 
