@@ -40,7 +40,8 @@
 /* Natural horizontal galleries use a shared height and each photo's own width. */
 .dm-slider--natural-gallery{container-type:inline-size}
 .dm-slider--natural-gallery .splide__track{
-  --dm-slider-photo-height:calc((100cqw - 2 * var(--dm-slider-gap)) / 4.5);
+  --dm-slider-auto-photo-height:calc((100cqw - var(--dm-slider-gap)) / 3);
+  --dm-slider-photo-height:var(--dm-slider-custom-photo-height,var(--dm-slider-auto-photo-height));
 }
 .dm-slider--natural-gallery.dm-slider--gallery.dm-slider--horizontal .splide__slide{
   flex-basis:min(100%,calc(var(--dm-slider-photo-height) * var(--dm-slider-photo-ratio,1.5)));
@@ -49,13 +50,8 @@
   height:var(--dm-slider-photo-height);
   object-fit:contain;
 }
-@media(max-width:980px){
-  .dm-slider--natural-gallery .splide__track{
-    --dm-slider-photo-height:calc((100cqw - var(--dm-slider-gap)) / 3);
-  }
-}
 @media(max-width:767px){
   .dm-slider--natural-gallery .splide__track{
-    --dm-slider-photo-height:calc(88cqw / 1.5);
+    --dm-slider-auto-photo-height:calc(88cqw / 1.5);
   }
 }
