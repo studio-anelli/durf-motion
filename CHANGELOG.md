@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.11
+- Let wide photos extend past the gallery viewport at their natural width while keeping the shared photo height.
+
 ## 1.11.10
 - Apply the photo corner radius to the visible photo in natural horizontal galleries, including wide photos centered within their frames.
 
