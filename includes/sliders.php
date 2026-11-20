@@ -55,6 +55,7 @@ final class DURF_Motion_Sliders {
         self::select('layout','Composition',array('editorial'=>'Editorial: one dominant image','gallery'=>'Gallery: multiple images','dot-mask'=>'Dot Mask: expanding circle reveal'),$s);
         self::select('fit','Image fit',array('cover'=>'Cover','contain'=>'Contain'),$s);
         self::select('position','Focal point',array('50% 50%'=>'Center','50% 25%'=>'Top','50% 75%'=>'Bottom','25% 50%'=>'Left','75% 50%'=>'Right'),$s);
+        self::checkbox('pause_hover','Pause autoplay while hovering',$s);
         echo '</div><h3>Corner styling</h3><div class="dm-slider-controls">';
         self::integer('container_radius','Container border radius (px)',0,200,$s);
         self::integer('image_radius','Image border radius (px)',0,200,$s);
@@ -64,7 +65,7 @@ final class DURF_Motion_Sliders {
         self::select('ratio','Image ratio',array('16/9'=>'16:9','4/3'=>'4:3','1/1'=>'Square','3/2'=>'3:2','auto'=>'Original (natural)'),$s);
         self::integer('gap','Gap (px)',0,60,$s);
         self::integer('peek','Editorial next image visible (%)',5,35,$s);
-        self::integer('speed','Snap transition (ms)',200,1800,$s);
+        echo '<input type="hidden" name="dm_slider[speed]" value="'.(int)$s['speed'].'">';
         self::integer('scroll_strength','Scroll influence (0–150%)',0,150,$s);
         self::integer('smoothness','Ease / inertia (0–95)',0,95,$s);
         self::integer('viewport_height','Vertical frame height (vh)',35,100,$s);
@@ -75,7 +76,6 @@ final class DURF_Motion_Sliders {
         self::integer('autoplay_speed','Autoplay speed (px / second)',3,160,$s);
         self::checkbox('loop','Seamless infinite loop',$s);
         self::checkbox('allow_drag','Allow mouse dragging / touch swiping',$s);
-        self::checkbox('pause_hover','Pause autoplay while hovering',$s);
         self::checkbox('image_drift','Subtle cinematic image movement',$s);
         self::checkbox('captions','Show Media Library captions',$s);
         echo '</div></div><div class="dm-slider-mask-settings" style="display:none"><h3>Dot Mask — reveal</h3><div class="dm-slider-controls">';
@@ -96,7 +96,6 @@ final class DURF_Motion_Sliders {
         self::integer('mask_color_handoff','Second circle growth lag (%)',0,65,$s);
         self::checkbox('mask_velocity','React to scroll speed',$s);
         self::integer('mask_velocity_strength','Scroll velocity influence (%)',0,100,$s);
-        self::checkbox('pause_hover','Pause automatic playback on hover',$s);
         echo '</div><p><strong>Companion text:</strong> use WPBakery’s own sticky column option. The plugin no longer moves neighbouring columns.</p><p>All dots expand together on an equally spaced grid. The outgoing photograph stays visible under the mask, and the next photo never reveals against a blank frame. Choose easing and optional scroll smoothing. Velocity response is limited to the current transition. Reduced-motion visitors see a static or stepped transition.</p></div><p><strong>Editorial idea:</strong> use a vertical filmstrip for a photographic column beside text, or a wide horizontal ribbon. Page-scroll motion never blocks ordinary site scrolling. Autoplay and page-scroll influence work simultaneously: scrolling briefly accelerates or reverses the filmstrip, then autoplay resumes. Infinite loop seamlessly joins the last image to the first. Turn dragging off when you want motion to be entirely automatic. Reduced-motion visitors see a static, manually navigable gallery.</p>';
     }
     private static function select($key,$label,$options,$s) {

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11.9
+- Show slider controls based on composition, direction, image sizing, playback and motion settings. Remove the unused snap duration control.
+
 ## 1.11.8
 - Increase the automatic height for desktop natural galleries and add a custom horizontal photo height in viewport units.
 
