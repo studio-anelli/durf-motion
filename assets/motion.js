@@ -537,11 +537,17 @@
       lenisInstance=new window.Lenis({
         lerp:lerp,wheelMultiplier:wheel,smoothWheel:true,syncTouch:false,autoRaf:false,
         prevent:function(node){
-          return !!(node && node.closest && node.closest('[data-lenis-prevent],.dm-slider,.wp-block-embed iframe,.modal,[role="dialog"]'));
+          return !!(node && node.closest && node.closest('[data-lenis-prevent],.wp-block-embed iframe,.modal,[role="dialog"]'));
         },
         virtualScroll:function(input){
-          if(cfg.scrollFocus==='off'||!focusElements.length||!input||!input.event)return true;
+          if(!input||!input.event)return true;
           var event=input.event;
+          var target=event.target;
+          if(event.type==='wheel'&&target&&target.closest&&target.closest('.dm-slider--horizontal')){
+            // Keep sideways gestures native while Lenis handles vertical page scrolling.
+            if(event.shiftKey||Math.abs(input.deltaX)>Math.abs(input.deltaY))return false;
+          }
+          if(cfg.scrollFocus==='off'||!focusElements.length)return true;
           if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return true;
           if(Math.abs(input.deltaX)>Math.abs(input.deltaY)*.4)return true;
           var h=window.innerHeight||1;
